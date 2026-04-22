@@ -1,0 +1,8 @@
+sqlmodel
+asyncpg
+greenlet
+fastapi
+uvicorn[standard]
+alembic
+python-dotenv
+aioimaplib

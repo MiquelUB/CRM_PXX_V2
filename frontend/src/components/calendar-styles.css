@@ -1,0 +1,32 @@
+/* Personalització del calendari per al mode fosc i estètica institucional */
+.rbc-calendar {
+  @apply text-slate-900 dark:text-slate-100 font-sans;
+}
+
+.rbc-header {
+  @apply py-3 text-xs font-black uppercase tracking-widest text-slate-400 border-slate-200 dark:border-slate-800 !important;
+}
+
+.rbc-off-range-bg {
+  @apply bg-slate-50 dark:bg-slate-900/50 !important;
+}
+
+.rbc-month-view, .rbc-time-view, .rbc-month-row, .rbc-day-bg {
+  @apply border-slate-100 dark:border-slate-800 !important;
+}
+
+.rbc-today {
+  @apply bg-indigo-50/50 dark:bg-indigo-900/10 !important;
+}
+
+.rbc-toolbar button {
+  @apply text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg font-bold text-xs !important;
+}
+
+.rbc-toolbar button.rbc-active {
+  @apply bg-indigo-600 text-white border-indigo-600 hover:bg-indigo-700 !important;
+}
+
+.rbc-event {
+  @apply shadow-sm transition-transform hover:scale-105 !important;
+}
