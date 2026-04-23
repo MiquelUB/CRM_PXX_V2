@@ -3,6 +3,10 @@ FROM node:20-alpine as build
 
 WORKDIR /app
 
+# Argument de compilació necessari per a Vite
+ARG VITE_API_URL
+ENV VITE_API_URL=$VITE_API_URL
+
 # Instal·lació de dependències
 COPY frontend/package*.json ./
 RUN npm install
