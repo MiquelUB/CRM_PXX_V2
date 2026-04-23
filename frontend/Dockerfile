@@ -4,11 +4,11 @@ FROM node:20-alpine as build
 WORKDIR /app
 
 # Instal·lació de dependències
-COPY package*.json ./
+COPY frontend/package*.json ./
 RUN npm install
 
 # Construcció de l'aplicació
-COPY . .
+COPY frontend/ .
 RUN npm run build
 
 # Etapa de producció
