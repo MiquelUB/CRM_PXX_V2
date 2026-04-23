@@ -5,13 +5,16 @@ WORKDIR /app
 # Instal·lació de dependències del sistema per a PostgreSQL
 RUN apt-get update && apt-get install -y libpq-dev gcc && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt .
+COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
+COPY backend/ .
+
+# Permisos per a l'entrypoint
+RUN chmod +x entrypoint.sh
 
 # Exposar el port de FastAPI
 EXPOSE 8000
 
-# Comanda per executar l'app amb Uvicorn
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Executar mitjançant l'entrypoint
+ENTRYPOINT ["./entrypoint.sh"]

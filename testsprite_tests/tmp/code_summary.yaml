@@ -1,0 +1,48 @@
+version: "2"
+type: backend
+tech_stack:
+  - Python
+  - FastAPI
+  - SQLModel
+  - PostgreSQL
+  - Alembic
+  - Uvicorn
+routes:
+  - path: /deals/{deal_id}/full
+    file: backend/main.py
+    method: GET
+    description: Get full details for a specific deal including municipality, contacts, and interactions.
+  - path: /calendar/events
+    file: backend/main.py
+    method: GET
+    description: Get calendar events derived from interaction history.
+  - path: /deals/kanban
+    file: backend/main.py
+    method: GET
+    description: Get the state of the Kanban board organized by deal status.
+features:
+  - name: Deal Intelligence
+    description: Comprehensive retrieval of deal data for the "Epicentre" view.
+    files:
+      - backend/main.py
+      - backend/models.py
+    api_calls:
+      - method: GET
+        endpoint: /deals/{deal_id}/full
+  - name: Native Calendar
+    description: Unified timeline and calendar feed derived from interactions.
+    files:
+      - backend/main.py
+      - backend/models.py
+    api_calls:
+      - method: GET
+        endpoint: /calendar/events
+  - name: Kanban Dashboard
+    description: High-performance data retrieval for the Kanban board with status categorization.
+    files:
+      - backend/main.py
+      - backend/models.py
+    api_calls:
+      - method: GET
+        endpoint: /deals/kanban
+known_limitations: []
