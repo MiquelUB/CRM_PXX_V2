@@ -27,10 +27,11 @@ services:
         condition: service_healthy
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: ${VITE_API_URL}
     restart: always
-    environment:
-      VITE_API_URL: ${VITE_API_URL}
     depends_on:
       - backend
 
