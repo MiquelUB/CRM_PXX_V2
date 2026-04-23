@@ -17,5 +17,6 @@ dist-ssr/
 *.log
 
 # OS
-.DS_Store
+# Dades de migració temporals
+migration_db/
 Thumbs.db

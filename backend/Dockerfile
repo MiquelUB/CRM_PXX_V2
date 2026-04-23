@@ -5,10 +5,10 @@ WORKDIR /app
 # Instal·lació de dependències del sistema per a PostgreSQL
 RUN apt-get update && apt-get install -y libpq-dev gcc && rm -rf /var/lib/apt/lists/*
 
-COPY backend/requirements.txt .
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY backend/ .
+COPY . .
 
 # Permisos per a l'entrypoint
 RUN chmod +x entrypoint.sh
