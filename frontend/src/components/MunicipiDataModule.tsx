@@ -35,10 +35,19 @@ const MunicipiDataModule: React.FC = () => {
     if (!deal?.municipi) return;
     setIsSaving(true);
     try {
+      const payload = {
+        adreça: formData.adreça,
+        email_general: formData.email_general,
+        telefon_general: formData.telefon_general,
+        poblacio: parseInt(formData.poblacio.toString()) || 0,
+        provincia: formData.provincia,
+        nom: formData.nom
+      };
+
       const response = await fetch(`${API_BASE}/municipis/${deal.municipi.codi_ine}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(payload)
       });
       if (response.ok) {
         await refreshDeal();
