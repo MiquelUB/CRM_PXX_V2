@@ -11,7 +11,11 @@ app = FastAPI(title="CRM PXX v2 - Final API")
 # Configurar CORS per permetre l'accés des del frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # En producció s'hauria de restringir
+    allow_origins=[
+        "https://crmv2-frontend.80opze.easypanel.host",
+        "http://localhost:5173", # Per a desenvolupament local
+        "http://localhost:4173"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -20,6 +24,10 @@ app.add_middleware(
 @app.on_event("startup")
 async def on_startup():
     await init_db()
+
+@app.get("/health")
+async def health_check():
+    return {"status": "ok", "version": "2.0.0"}
 
 @app.get("/deals/{deal_id}/full")
 async def get_deal_full(deal_id: int, session=Depends(get_session)):
