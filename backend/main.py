@@ -14,7 +14,27 @@ import logging
 from datetime import datetime
 from fastapi import APIRouter
 
-app = FastAPI(title="CRM PXX v2 - Expert Refactored API")
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Gestió segura del cicle de vida de l'aplicació."""
+    try:
+        logging.info("Iniciant connexions i inicialitzant DB...")
+        await init_db()
+        logging.info("DB inicialitzada correctament.")
+    except Exception as e:
+        # Si la DB falla, no matem el servidor (per evitar 502 Bad Gateway en boot).
+        # Així el servidor HTTP aixeca i podem veure els logs o respondre 503.
+        logging.critical(f"ERROR CRÍTIC a l'arrencada (DB): {e}")
+        logging.error(traceback.format_exc())
+    yield
+    logging.info("Tancant connexions...")
+
+app = FastAPI(
+    title="CRM PXX v2 - Expert Refactored API",
+    lifespan=lifespan
+)
 
 # --- CONFIGURACIÓ CORS ---
 app.add_middleware(
@@ -43,13 +63,9 @@ async def global_exception_handler(request: Request, exc: Exception):
         headers={"Access-Control-Allow-Origin": "*"}
     )
 
-@app.on_event("startup")
-async def on_startup():
-    await init_db()
-
 @app.get("/health")
 async def health_check():
-    return {"status": "ok", "version": "2.1.0"}
+    return {"status": "ok", "version": "2.1.1", "timestamp": datetime.utcnow().isoformat()}
 
 # --- DEALS (PROJECTES) ---
 

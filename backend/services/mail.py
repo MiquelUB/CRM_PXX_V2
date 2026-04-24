@@ -8,7 +8,7 @@ import logging
 from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
-from ..models import Interaccio, Contacte
+from models import Interaccio, Contacte
 
 # Configuració de logging per traçabilitat en Phase C
 logger = logging.getLogger(__name__)
@@ -22,10 +22,6 @@ def generate_email_hash(message_id: str, sender: str, date: datetime, subject: s
     subject_hash = hashlib.md5(subject.encode()).hexdigest()
     raw_id = f"{message_id}|{sender}|{date_str}|{subject_hash}"
     return hashlib.sha256(raw_id.encode()).hexdigest()
-
-import email.utils
-from sqlalchemy import select
-from ..models import Interaccio, Contacte
 
 async def resoldre_contacte_id(session: AsyncSession, remitent_brut: str) -> int | None:
     """Extrau l'email net i busca el contacte_id a la base de dades."""

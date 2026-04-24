@@ -5,7 +5,7 @@ from sqlalchemy.orm import selectinload, joinedload
 from sqlmodel import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime
-from ..models import Deal, Interaccio, Esdeveniment
+from models import Deal, Interaccio, Esdeveniment
 
 # SDK configurat per a OpenRouter
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
