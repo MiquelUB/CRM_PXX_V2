@@ -31,6 +31,7 @@ export interface Municipi {
   nom: string;
   provincia?: string;
   poblacio?: number;
+  contactes?: Contacte[];
 }
 
 export interface DealData {
@@ -38,7 +39,6 @@ export interface DealData {
   titol: string;
   estat: string;
   municipi: Municipi;
-  contactes: Contacte[];
   interaccions: Interaccio[];
   esdeveniments: Esdeveniment[];
   pla_tipus?: 'roure' | 'mirador' | 'territori';

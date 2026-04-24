@@ -9,8 +9,10 @@ interface DealSnippet {
   id: number;
   titol: string;
   estat: string;
-  municipi: { nom: string };
-  contactes: { nom: string }[];
+  municipi: { 
+    nom: string;
+    contactes?: { nom: string }[];
+  };
   plan_nom?: string;
 }
 
@@ -130,7 +132,7 @@ const KanbanBoard: React.FC = () => {
                             <div className="flex items-center gap-1.5">
                               <User size={12} className="text-slate-400" />
                               <span className="truncate">
-                                {deal.contactes?.[0]?.nom || 'Sense contacte'}
+                                {deal.municipi?.contactes?.[0]?.nom || 'Sense contacte'}
                               </span>
                             </div>
                           </div>
