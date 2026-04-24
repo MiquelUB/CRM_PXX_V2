@@ -2,7 +2,7 @@ import os
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 from sqlmodel import SQLModel
-from models import Municipi, Deal, Contacte, Interaccio
+from models import Municipi, Deal, Contacte, Interaccio, Esdeveniment
 
 # DATABASE_URL hauria de venir de les variables d'entorn d'EasyPanel
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+asyncpg://user:password@localhost/crm_pxx_v2")
