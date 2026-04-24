@@ -33,9 +33,9 @@ async def worker_loop():
                     logger.info(f"Sincronitzant emails per al Deal {deal.id}...")
                     await run_mail_sync(session, deal.id, imap_config)
             
-            # Esperem 10 minuts abans de la següent passada
-            logger.info("Passada de sincronització completada. Esperant 10 minuts...")
-            await asyncio.sleep(600)
+            # Esperem 2 minuts abans de la següent passada
+            logger.info("Passada de sincronització completada. Esperant 2 minuts...")
+            await asyncio.sleep(120)
             
         except Exception as e:
             logger.error(f"Error en el bucle del worker: {str(e)}")

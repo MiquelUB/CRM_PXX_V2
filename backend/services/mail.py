@@ -4,9 +4,10 @@ from email.policy import default
 from datetime import datetime, timezone
 import aioimaplib
 import logging
+from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
-from ..models import Interaccio
+from ..models import Interaccio, Contacte
 
 # Configuració de logging per traçabilitat en Phase C
 logger = logging.getLogger(__name__)
@@ -22,19 +23,30 @@ def generate_email_hash(message_id: str, sender: str, date: datetime, subject: s
     return hashlib.sha256(raw_id.encode()).hexdigest()
 
 async def upsert_email_to_interaction(session: AsyncSession, deal_id: int, email_data: dict):
-    """UPSERT atòmic a PostgreSQL (Idempotent)."""
+    """UPSERT atòmic a PostgreSQL amb resolució de contacte."""
+    # 1. Intentem resoldre el contacte pel seu email per enllaçar-lo
+    sender_email = email_data['from'].lower()
+    # Netejar format "Nom <email@ex.com>" si cal
+    if "<" in sender_email:
+        sender_email = sender_email.split("<")[1].split(">")[0]
+    
+    contact_stmt = select(Contacte.id).where(Contacte.email == sender_email)
+    contact_res = await session.execute(contact_stmt)
+    contacte_id = contact_res.scalar_one_or_none()
+
+    # 2. Generem el hash per a la idempotència
     email_hash = generate_email_hash(
         email_data['message_id'], email_data['from'], email_data['date'], email_data['subject']
     )
 
-    # El dialecte PostgreSQL insert permet fer l'upsert natiu
+    # 3. Executem l'UPSERT (específic de PostgreSQL)
     stmt = insert(Interaccio).values(
         tipus="EMAIL",
         contingut=email_data['body'],
         data_creacio=email_data['date'].astimezone(timezone.utc),
-        autor=email_data['from'],
         external_id=email_hash,
-        deal_id=deal_id
+        deal_id=deal_id,
+        contacte_id=contacte_id # Si és None, es guarda com a null (correcte)
     ).on_conflict_do_nothing(index_elements=['external_id'])
     
     await session.execute(stmt)
