@@ -53,12 +53,12 @@ const DealDetail: React.FC = () => {
             </div>
             <div className="space-y-3">
               <div>
-                <p className="text-3xl font-black text-indigo-600 dark:text-indigo-400">{deal.municipi.nom}</p>
-                <p className="text-sm text-slate-500 font-medium">Província: {deal.municipi.provincia}</p>
+                <p className="text-3xl font-black text-indigo-600 dark:text-indigo-400">{deal.municipi?.nom || 'Municipi no trobat'}</p>
+                <p className="text-sm text-slate-500 font-medium">Província: {deal.municipi?.provincia || 'N/A'}</p>
               </div>
               <div className="pt-3 border-t border-slate-100 dark:border-slate-900 flex justify-between text-sm">
                 <span className="text-slate-500">Població (Idescat)</span>
-                <span className="font-bold">{deal.municipi.poblacio?.toLocaleString() || 'N/A'} hab.</span>
+                <span className="font-bold">{deal.municipi?.poblacio?.toLocaleString() || 'N/A'} hab.</span>
               </div>
             </div>
           </div>

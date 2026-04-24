@@ -122,7 +122,7 @@ const KanbanBoard: React.FC = () => {
                           <div className="space-y-1.5 text-[11px] text-slate-500 dark:text-slate-400">
                             <div className="flex items-center gap-1.5">
                               <MapPin size={12} className="text-indigo-500" />
-                              <span className="truncate">{deal.municipi.nom}</span>
+                              <span className="truncate">{deal.municipi?.nom || 'N/A'}</span>
                             </div>
                             <div className="flex items-center gap-1.5">
                               <User size={12} className="text-slate-400" />
