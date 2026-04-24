@@ -18,8 +18,18 @@ const KimiChatDrawer: React.FC<KimiChatDrawerProps> = ({ isOpen, onClose }) => {
   const [input, setInput] = useState('');
   const [isAgentTyping, setIsAgentTyping] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
+  useEffect(() => {
+    return () => {
+      // Cancela la crida a xarxa si l'usuari tanca el calaix o el component es desmunta
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -30,6 +40,7 @@ const KimiChatDrawer: React.FC<KimiChatDrawerProps> = ({ isOpen, onClose }) => {
   const handleAskKimi = async (query: string) => {
     if (!query.trim() || isAgentTyping || !deal) return;
     
+    abortControllerRef.current = new AbortController();
     const userMessage: Message = { role: 'user', content: query };
     setMessages(prev => [...prev, userMessage]);
     setInput('');
@@ -39,7 +50,8 @@ const KimiChatDrawer: React.FC<KimiChatDrawerProps> = ({ isOpen, onClose }) => {
       const response = await fetch(`${API_BASE}/agent/deals/${deal.id}/ask`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query })
+        body: JSON.stringify({ query }),
+        signal: abortControllerRef.current.signal // Evita el leak si es tanca el component
       });
       
       if (!response.ok) throw new Error("Error de l'Agent");
@@ -50,9 +62,13 @@ const KimiChatDrawer: React.FC<KimiChatDrawerProps> = ({ isOpen, onClose }) => {
       
       // Si la IA ha inserit cites o notes per darrere, cal forçar el refresc del context
       await refreshDeal(); 
-    } catch (error) {
-      console.error("Error al xat amb Kimi:", error);
-      setMessages(prev => [...prev, { role: 'assistant', content: "Ho sento, s'ha produït un error al connectar amb el meu cervell central." }]);
+    } catch (error: any) {
+      if (error.name === 'AbortError') {
+        console.warn("Petició LLM cancel·lada per tancament de UI.");
+      } else {
+        console.error("Error al xat amb Kimi:", error);
+        setMessages(prev => [...prev, { role: 'assistant', content: "Ho sento, s'ha produït un error al connectar amb el meu cervell central." }]);
+      }
     } finally {
       setIsAgentTyping(false);
     }
