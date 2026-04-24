@@ -21,7 +21,6 @@ const MainLayout: React.FC = () => {
     { to: '/deals', icon: <Briefcase size={20} />, label: 'Deals' },
     { to: '/municipis', icon: <MapPin size={20} />, label: 'Municipis' },
     { to: '/contactes', icon: <Users size={20} />, label: 'Contactes' },
-    { to: '/emails', icon: <Mail size={20} />, label: 'Correus' },
     { to: '/pagaments', icon: <CreditCard size={20} />, label: 'Pagaments' },
     { to: '/configuracio', icon: <Settings size={20} />, label: 'Configuració' },
   ];

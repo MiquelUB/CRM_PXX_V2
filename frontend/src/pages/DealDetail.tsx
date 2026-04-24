@@ -104,8 +104,6 @@ const DealDetail: React.FC = () => {
             </h2>
           </div>
 
-          <NotesBox />
-          
           <UnifiedTimeline />
         </div>
       </div>

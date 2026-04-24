@@ -2,17 +2,20 @@ import React, { createContext, useContext } from 'react';
 import type { ReactNode } from 'react';
 import { useParams } from 'react-router-dom';
 import useSWR from 'swr';
-import type { KeyedMutator } from 'swr';
 
-// Definició de tipus basada en models.py del backend
 export interface Interaccio {
   id: number;
   tipus: string;
   contingut: string;
-  data: string;
-  data_fi?: string;
+  data_creacio: string;
   autor?: string;
-  external_id?: string;
+}
+
+export interface Esdeveniment {
+  id: number;
+  titol: string;
+  data_hora: string;
+  creat_per_ia: bool;
 }
 
 export interface Contacte {
@@ -26,22 +29,16 @@ export interface Contacte {
 export interface Municipi {
   codi_ine: string;
   nom: string;
-  poblacio?: number;
-  provincia: string;
 }
 
 export interface DealData {
   id: number;
-  titol: string;
   estat: string;
-  data_creacio: string;
   municipi: Municipi;
   contactes: Contacte[];
   interaccions: Interaccio[];
-  // Camps per a la lògica de plans SaaS (poden venir del backend o ser locals)
-  plan_nom?: string;
-  rutes_limit?: number;
-  pois_limit?: number;
+  esdeveniments: Esdeveniment[];
+  pla_tipus?: 'roure' | 'mirador' | 'territori';
   preu_acordat?: number;
 }
 
@@ -49,12 +46,11 @@ interface DealContextType {
   deal: DealData | undefined;
   isLoading: boolean;
   error: any;
-  mutate: KeyedMutator<DealData>;
+  refreshDeal: () => Promise<void>;
 }
 
 const DealContext = createContext<DealContextType | undefined>(undefined);
 
-// Fetcher genèric per a SWR
 const fetcher = (url: string) => fetch(url).then(res => {
   if (!res.ok) throw new Error(`API error: ${res.status}`);
   return res.json();
@@ -73,8 +69,12 @@ export const DealProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   );
 
+  const refreshDeal = async () => {
+    await mutate();
+  };
+
   return (
-    <DealContext.Provider value={{ deal, error, isLoading, mutate }}>
+    <DealContext.Provider value={{ deal, error, isLoading, refreshDeal }}>
       {children}
     </DealContext.Provider>
   );

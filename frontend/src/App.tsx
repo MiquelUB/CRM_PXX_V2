@@ -38,7 +38,6 @@ function App() {
             />
             <Route path="municipis" element={<Municipis />} />
             <Route path="contactes" element={<Contactes />} />
-            <Route path="emails" element={<Emails />} />
             <Route path="pagaments" element={<Placeholder title="Pagaments" />} />
             <Route path="configuracio" element={<Placeholder title="Configuració" />} />
           </Route>
