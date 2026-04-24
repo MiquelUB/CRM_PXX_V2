@@ -3,11 +3,8 @@ import { useDeal } from '../context/DealContext';
 import { 
   Mail, 
   MessageSquare, 
-  Phone, 
-  Calendar, 
   User, 
   Clock,
-  PlusCircle,
   Loader2,
   FileText,
   Activity,

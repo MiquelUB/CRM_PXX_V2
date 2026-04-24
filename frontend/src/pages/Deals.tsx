@@ -1,6 +1,6 @@
 import React from 'react';
 import useSWR from 'swr';
-import { Briefcase, Building, Calendar, ArrowRight, User } from 'lucide-react';
+import { Briefcase, Building, Calendar, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';

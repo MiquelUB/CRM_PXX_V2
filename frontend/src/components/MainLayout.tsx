@@ -1,15 +1,14 @@
 import React from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { 
-  LayoutDashboard, 
-  Briefcase, 
-  MapPin, 
-  Users, 
-  CreditCard, 
-  Settings, 
-  Moon, 
   Sun,
-  Mail
+  Moon,
+  LayoutDashboard,
+  Briefcase,
+  MapPin,
+  Users,
+  CreditCard,
+  Settings
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 
