@@ -182,7 +182,7 @@ async def update_deal_saas(deal_id: int, data: dict, session=Depends(get_session
 
 @app.get("/contactes")
 async def get_contactes(session=Depends(get_session)):
-    statement = select(Contacte).options(joinedload(Contacte.municipi))
+    statement = select(Contacte).options(selectinload(Contacte.municipi))
     result = await session.execute(statement)
     return result.scalars().all()
 

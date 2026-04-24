@@ -149,6 +149,7 @@ const Contactes: React.FC = () => {
           </div>
         ))}
       </div>
+      {console.log("AGENDA CARREGADA. Contactes:", contactes)}
     </div>
   );
 };
