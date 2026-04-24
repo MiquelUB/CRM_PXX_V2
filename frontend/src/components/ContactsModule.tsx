@@ -22,13 +22,18 @@ const ContactsModule: React.FC = () => {
     
     setIsSaving(true);
     try {
+      const payload = {
+        nom: formData.nom,
+        email: formData.email,
+        telefon: formData.telefon,
+        carrec: formData.carrec,
+        municipi_id: deal.municipi.codi_ine // Injectem el codi_ine del municipi
+      };
+
       const response = await fetch(`${API_BASE}/contactes`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...formData,
-          municipi_id: deal.municipi.codi_ine // Injectem el municipi_id del Deal actual
-        })
+        body: JSON.stringify(payload)
       });
       
       if (response.ok) {
