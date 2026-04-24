@@ -27,7 +27,16 @@ app.add_middleware(
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
-    logging.error(f"Error crític: {str(exc)}") # Log al servidor, no al client
+    # Bypass per a excepcions HTTP controlades
+    if isinstance(exc, HTTPException):
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={"detail": exc.detail},
+            headers={"Access-Control-Allow-Origin": "*"}
+        )
+    
+    # Logging exhaustiu només per a caigudes reals
+    logging.error(f"Error crític 500 a {request.method} {request.url.path}: {str(exc)}", exc_info=True)
     return JSONResponse(
         status_code=500,
         content={"detail": "S'ha produït un error intern al servidor."},
