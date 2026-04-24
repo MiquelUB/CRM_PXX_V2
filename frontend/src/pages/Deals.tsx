@@ -179,7 +179,7 @@ const Deals: React.FC = () => {
                           <Briefcase size={18} />
                         </div>
                         <div>
-                          <p className="font-bold text-slate-900 dark:text-white">{deal.titol}</p>
+                          <p className="font-bold text-slate-900 dark:text-white">{deal.municipi?.nom || deal.titol}</p>
                           <p className="text-xs text-slate-500 font-mono">ID #{deal.id}</p>
                         </div>
                       </div>

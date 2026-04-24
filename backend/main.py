@@ -199,6 +199,24 @@ async def get_deals(session=Depends(get_session)):
     result = await session.execute(statement)
     return result.scalars().all()
 
+@app.patch("/deals/{deal_id}/estat")
+async def update_deal_estat(deal_id: int, data: dict, session=Depends(get_session)):
+    statement = select(Deal).where(Deal.id == deal_id)
+    result = await session.execute(statement)
+    deal = result.scalar_one_or_none()
+    
+    if not deal:
+        raise HTTPException(status_code=404, detail="Deal no trobat")
+        
+    nou_estat = data.get("estat")
+    if nou_estat:
+        deal.estat = nou_estat
+        session.add(deal)
+        await session.commit()
+        await session.refresh(deal)
+        
+    return deal
+
 @app.post("/interaccions")
 async def create_interaccio(data: dict, session=Depends(get_session)):
     from datetime import datetime

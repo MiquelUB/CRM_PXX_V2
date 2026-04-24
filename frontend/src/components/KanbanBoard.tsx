@@ -119,7 +119,7 @@ const KanbanBoard: React.FC = () => {
                           </div>
                           
                           <h4 className="font-bold text-slate-900 dark:text-white leading-tight mb-3">
-                            {deal.titol}
+                            {deal.municipi?.nom || deal.titol}
                           </h4>
 
                           <div className="space-y-1.5 text-[11px] text-slate-500 dark:text-slate-400">

@@ -30,7 +30,7 @@ const DealDetail: React.FC = () => {
             </span>
           </div>
           <h1 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">
-            {deal.titol}
+            {deal.municipi?.nom || deal.titol}
           </h1>
         </div>
         <div className="flex gap-3">
