@@ -5,13 +5,14 @@ from starlette.requests import Request
 from sqlmodel import select
 from sqlalchemy.orm import selectinload, joinedload
 from database import get_session, init_db
-from models import Deal, Municipi, Interaccio, Contacte
+from models import Deal, Municipi, Interaccio, Contacte, Esdeveniment
 from typing import List
 import traceback
+from datetime import datetime
 
-app = FastAPI(title="CRM PXX v2 - Final API")
+app = FastAPI(title="CRM PXX v2 - Expert Refactored API")
 
-# Configurar CORS per permetre l'accés des del frontend
+# --- CONFIGURACIÓ CORS ---
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -22,80 +23,120 @@ app.add_middleware(
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
-    """Capturem TOTS els errors per garantir que les capçaleres CORS sempre s'envien."""
     traceback.print_exc()
     return JSONResponse(
         status_code=500,
         content={"detail": str(exc)},
-        headers={
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "*",
-            "Access-Control-Allow-Headers": "*",
-        }
+        headers={"Access-Control-Allow-Origin": "*"}
     )
 
 @app.on_event("startup")
 async def on_startup():
-    try:
-        await init_db()
-        print("Base de dades inicialitzada correctament")
-    except Exception as e:
-        print(f"Error inicialitzant la base de dades: {e}")
+    await init_db()
 
 @app.get("/health")
-async def health_check(session=Depends(get_session)):
-    try:
-        # Intentem una consulta simple per verificar la connexió
-        from sqlalchemy import text
-        await session.execute(text("SELECT 1"))
-        return {"status": "ok", "db": "connected", "version": "2.0.1"}
-    except Exception as e:
-        return {"status": "error", "db": str(e), "version": "2.0.1"}
+async def health_check():
+    return {"status": "ok", "version": "2.1.0"}
+
+# --- DEALS (PROJECTES) ---
+
+@app.get("/deals/kanban")
+async def get_kanban_deals(session=Depends(get_session)):
+    """Retorna el board injectant municipi.nom com a títol per compatibilitat."""
+    statement = select(Deal).options(joinedload(Deal.municipi))
+    result = await session.execute(statement)
+    deals = result.scalars().all()
+    
+    board = {"prospecte": [], "contactat": [], "reunio": [], "tancat": []}
+    for d in deals:
+        deal_dict = d.dict()
+        # Injecció dinàmica de títol per no trencar el Kanban
+        deal_dict["titol"] = d.municipi.nom if d.municipi else "Projecte sense nom"
+        deal_dict["municipi"] = d.municipi
+        if d.estat in board:
+            board[d.estat].append(deal_dict)
+    return board
 
 @app.get("/deals/{deal_id}/full")
 async def get_deal_full(deal_id: int, session=Depends(get_session)):
+    """Endpoint unificat 360º: Deal + Municipi + Contactes + Timeline + Events."""
     statement = (
         select(Deal)
         .where(Deal.id == deal_id)
         .options(
-            joinedload(Deal.municipi),
-            selectinload(Deal.contactes),
-            selectinload(Deal.interaccions)
+            joinedload(Deal.municipi).selectinload(Municipi.contactes),
+            selectinload(Deal.interaccions).joinedload(Interaccio.contacte),
+            selectinload(Deal.esdeveniments)
         )
     )
     result = await session.execute(statement)
     deal = result.scalar_one_or_none()
-    if not deal: raise HTTPException(status_code=404, detail="No trobat")
-    return deal
-
-@app.get("/calendar/events")
-async def get_calendar_events(session=Depends(get_session)):
-    """Calendari natiu alimentat per la font de veritat única (interaccions)."""
-    statement = (
-        select(Interaccio)
-        .options(joinedload(Interaccio.deal))
-        .where(Interaccio.tipus.in_(["trucada", "reunio", "visita", "tasca"]))
-    )
-    result = await session.execute(statement)
-    interaccions = result.scalars().all()
     
-    return [{
-        "id": i.id,
-        "title": f"[{i.tipus.upper()}] {i.deal.titol if i.deal else 'N/A'}",
-        "start": i.data,
-        "end": i.data_fi or i.data,
-        "resource": {"deal_id": i.deal_id}
-    } for i in interaccions]
+    if not deal:
+        raise HTTPException(status_code=404, detail="Deal no trobat")
+    
+    # Preparem la resposta amb títol virtual i ordenació de timeline
+    res = deal.dict()
+    res["titol"] = deal.municipi.nom
+    res["municipi"] = deal.municipi.dict()
+    res["municipi"]["contactes"] = deal.municipi.contactes
+    res["interaccions"] = sorted(deal.interaccions, key=lambda x: x.data_creacio, reverse=True)
+    res["esdeveniments"] = deal.esdeveniments
+    
+    return res
 
-@app.get("/deals/kanban")
-async def get_kanban_board(session=Depends(get_session)):
-    statement = select(Deal).options(joinedload(Deal.municipi))
+@app.post("/deals")
+async def create_deal(data: dict, session=Depends(get_session)):
+    nou_deal = Deal(
+        municipi_id=data.get("municipi_id"),
+        estat=data.get("estat", "prospecte"),
+        pla_tipus=data.get("pla_tipus"),
+        preu_acordat=data.get("preu_acordat")
+    )
+    session.add(nou_deal)
+    await session.commit()
+    await session.refresh(nou_deal)
+    return nou_deal
+
+@app.patch("/deals/{deal_id}/estat")
+async def update_deal_estat(deal_id: int, data: dict, session=Depends(get_session)):
+    statement = select(Deal).where(Deal.id == deal_id)
     result = await session.execute(statement)
-    deals = result.scalars().all()
-    board = {"prospecte": [], "contactat": [], "reunio": [], "tancat": []}
-    for d in deals:
-        if d.estat in board: board[d.estat].append(d)
-    return board
+    deal = result.scalar_one_or_none()
+    if not deal: raise HTTPException(status_code=404, detail="No trobat")
+    
+    if "estat" in data: deal.estat = data["estat"]
+    session.add(deal)
+    await session.commit()
+    return {"status": "ok"}
+
+# --- CONTACTES ---
+
+@app.get("/contactes")
+async def get_contactes(session=Depends(get_session)):
+    statement = select(Contacte).options(joinedload(Contacte.municipi))
+    result = await session.execute(statement)
+    return result.scalars().all()
+
+@app.post("/contactes")
+async def create_contacte(data: dict, session=Depends(get_session)):
+    mid = data.get("municipi_id")
+    if not mid:
+        raise HTTPException(status_code=400, detail="El municipi_id és obligatori")
+    
+    nou_contacte = Contacte(
+        nom=data.get("nom"),
+        email=data.get("email"),
+        telefon=data.get("telefon"),
+        carrec=data.get("carrec"),
+        municipi_id=mid
+    )
+    session.add(nou_contacte)
+    await session.commit()
+    await session.refresh(nou_contacte)
+    return nou_contacte
+
+# --- MUNICIPIS ---
 
 @app.get("/municipis")
 async def get_municipis(session=Depends(get_session)):
@@ -105,148 +146,58 @@ async def get_municipis(session=Depends(get_session)):
 
 @app.post("/municipis")
 async def create_municipi(municipi: Municipi, session=Depends(get_session)):
+    """Crea el municipi i autogenera el seu Deal 1:1 associat."""
     session.add(municipi)
     await session.commit()
     await session.refresh(municipi)
     
-    # Creem automàticament un Deal associat a aquest municipi (1 municipi = 1 deal en aquesta fase)
+    # Creació del Deal associat segons la nova arquitectura
     nou_deal = Deal(
-        titol=f"Projecte {municipi.nom}",
         municipi_id=municipi.codi_ine,
         estat="prospecte"
+        # pla_tipus i preu_acordat queden a None inicialment
     )
     session.add(nou_deal)
     await session.commit()
     
     return municipi
 
-@app.get("/contactes")
-async def get_contactes(session=Depends(get_session)):
-    # Corregim la càrrega: Contacte -> Deal -> Municipi
-    statement = select(Contacte).options(
-        joinedload(Contacte.deal).joinedload(Deal.municipi)
-    )
-    result = await session.execute(statement)
-    return result.scalars().all()
-
-@app.post("/contactes")
-async def create_contacte(data: dict, session=Depends(get_session)):
-    # Busquem el Deal associat al municipi enviat
-    codi_ine = data.get("codi_ine_municipi")
-    statement = select(Deal).where(Deal.municipi_id == codi_ine)
-    result = await session.execute(statement)
-    deal = result.scalars().first()
-    
-    if not deal:
-        raise HTTPException(status_code=400, detail="Aquest municipi no té cap projecte (Deal) actiu.")
-    
-    nou_contacte = Contacte(
-        nom=data.get("nom"),
-        email=data.get("email"),
-        telefon=data.get("telefon"),
-        carrec=data.get("carrec"),
-        deal_id=deal.id
-    )
-    session.add(nou_contacte)
-    await session.commit()
-    await session.refresh(nou_contacte)
-    return nou_contacte
-
-@app.put("/contactes/{contacte_id}")
-async def update_contacte(contacte_id: int, data: dict, session=Depends(get_session)):
-    statement = select(Contacte).where(Contacte.id == contacte_id)
-    result = await session.execute(statement)
-    contacte = result.scalar_one_or_none()
-    
-    if not contacte:
-        raise HTTPException(status_code=404, detail="Contacte no trobat")
-    
-    if "nom" in data: contacte.nom = data["nom"]
-    if "email" in data: contacte.email = data["email"]
-    if "telefon" in data: contacte.telefon = data["telefon"]
-    if "carrec" in data: contacte.carrec = data["carrec"]
-    
-    session.add(contacte)
-    await session.commit()
-    await session.refresh(contacte)
-    return contacte
-
-@app.delete("/contactes/{contacte_id}")
-async def delete_contacte(contacte_id: int, session=Depends(get_session)):
-    statement = select(Contacte).where(Contacte.id == contacte_id)
-    result = await session.execute(statement)
-    contacte = result.scalar_one_or_none()
-    if contacte:
-        await session.delete(contacte)
-        await session.commit()
-    return {"status": "ok"}
-
-@app.post("/deals")
-async def create_deal(data: dict, session=Depends(get_session)):
-    nou_deal = Deal(
-        titol=data.get("titol"),
-        municipi_id=data.get("municipi_id"),
-        estat=data.get("estat", "prospecte")
-    )
-    session.add(nou_deal)
-    await session.commit()
-    await session.refresh(nou_deal)
-    return nou_deal
-
-@app.get("/deals")
-async def get_deals(session=Depends(get_session)):
-    statement = select(Deal).options(joinedload(Deal.municipi))
-    result = await session.execute(statement)
-    return result.scalars().all()
-
-@app.patch("/deals/{deal_id}/estat")
-async def update_deal_estat(deal_id: int, data: dict, session=Depends(get_session)):
-    statement = select(Deal).where(Deal.id == deal_id)
-    result = await session.execute(statement)
-    deal = result.scalar_one_or_none()
-    
-    if not deal:
-        raise HTTPException(status_code=404, detail="Deal no trobat")
-        
-    nou_estat = data.get("estat")
-    if nou_estat:
-        deal.estat = nou_estat
-        session.add(deal)
-        await session.commit()
-        await session.refresh(deal)
-        
-    return deal
+# --- TIMELINE (INTERACCIONS) ---
 
 @app.post("/interaccions")
 async def create_interaccio(data: dict, session=Depends(get_session)):
-    from datetime import datetime
-    
-    nou_interaccio = Interaccio(
+    nou = Interaccio(
         deal_id=data.get("deal_id"),
-        tipus=data.get("tipus", "nota"),
+        contacte_id=data.get("contacte_id"),
+        tipus=data.get("tipus", "NOTA_MANUAL"),
         contingut=data.get("contingut", ""),
-        autor=data.get("autor", "Sistema"),
+        data_creacio=datetime.utcnow()
     )
-    
-    # Check if we have specific date or end date for events
-    if "data" in data and data["data"]:
-        nou_interaccio.data = datetime.fromisoformat(data["data"].replace("Z", "+00:00"))
-    if "data_fi" in data and data["data_fi"]:
-        nou_interaccio.data_fi = datetime.fromisoformat(data["data_fi"].replace("Z", "+00:00"))
-        
-    session.add(nou_interaccio)
+    session.add(nou)
     await session.commit()
-    await session.refresh(nou_interaccio)
-    return nou_interaccio
+    await session.refresh(nou)
+    return nou
 
 @app.get("/emails")
 async def get_emails(session=Depends(get_session)):
     statement = (
         select(Interaccio)
-        .options(joinedload(Interaccio.deal))
-        .where(Interaccio.tipus.in_(["email_in", "email_out"]))
-        .order_by(Interaccio.data.desc())
+        .where(Interaccio.tipus == "EMAIL")
+        .order_by(Interaccio.data_creacio.desc())
     )
     result = await session.execute(statement)
     return result.scalars().all()
 
+# --- CALENDARI (ESDEVENIMENTS) ---
+
+@app.get("/calendar/events")
+async def get_calendar_events(session=Depends(get_session)):
+    statement = select(Esdeveniment).options(joinedload(Esdeveniment.deal).joinedload(Deal.municipi))
+    result = await session.execute(statement)
+    events = result.scalars().all()
+    return [{
+        "id": e.id,
+        "title": f"{e.titol} ({e.deal.municipi.nom})",
+        "start": e.data_hora,
+        "resource": {"deal_id": e.deal_id}
+    } for e in events]
