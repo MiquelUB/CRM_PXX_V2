@@ -11,23 +11,29 @@ app = FastAPI(title="CRM PXX v2 - Final API")
 # Configurar CORS per permetre l'accés des del frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "https://crmv2-frontend.80opze.easypanel.host",
-        "http://localhost:5173", # Per a desenvolupament local
-        "http://localhost:4173"
-    ],
-    allow_credentials=True,
+    allow_origins=["*"], # Provem amb * i credentials False per descartar problemes de domini
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 @app.on_event("startup")
 async def on_startup():
-    await init_db()
+    try:
+        await init_db()
+        print("Base de dades inicialitzada correctament")
+    except Exception as e:
+        print(f"Error inicialitzant la base de dades: {e}")
 
 @app.get("/health")
-async def health_check():
-    return {"status": "ok", "version": "2.0.0"}
+async def health_check(session=Depends(get_session)):
+    try:
+        # Intentem una consulta simple per verificar la connexió
+        from sqlalchemy import text
+        await session.execute(text("SELECT 1"))
+        return {"status": "ok", "db": "connected", "version": "2.0.1"}
+    except Exception as e:
+        return {"status": "error", "db": str(e), "version": "2.0.1"}
 
 @app.get("/deals/{deal_id}/full")
 async def get_deal_full(deal_id: int, session=Depends(get_session)):
