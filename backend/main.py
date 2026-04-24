@@ -65,3 +65,15 @@ async def get_kanban_board(session=Depends(get_session)):
     for d in deals:
         if d.estat in board: board[d.estat].append(d)
     return board
+
+@app.get("/municipis")
+async def get_municipis(session=Depends(get_session)):
+    statement = select(Municipi)
+    result = await session.execute(statement)
+    return result.scalars().all()
+
+@app.get("/contactes")
+async def get_contactes(session=Depends(get_session)):
+    statement = select(Contacte).options(joinedload(Contacte.municipi))
+    result = await session.execute(statement)
+    return result.scalars().all()
