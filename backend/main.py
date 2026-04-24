@@ -135,7 +135,7 @@ async def create_contacte(data: dict, session=Depends(get_session)):
     codi_ine = data.get("codi_ine_municipi")
     statement = select(Deal).where(Deal.municipi_id == codi_ine)
     result = await session.execute(statement)
-    deal = result.scalar_one_or_none()
+    deal = result.scalars().first()
     
     if not deal:
         raise HTTPException(status_code=400, detail="Aquest municipi no té cap projecte (Deal) actiu.")
@@ -180,3 +180,55 @@ async def delete_contacte(contacte_id: int, session=Depends(get_session)):
         await session.delete(contacte)
         await session.commit()
     return {"status": "ok"}
+
+@app.post("/deals")
+async def create_deal(data: dict, session=Depends(get_session)):
+    nou_deal = Deal(
+        titol=data.get("titol"),
+        municipi_id=data.get("municipi_id"),
+        estat=data.get("estat", "prospecte")
+    )
+    session.add(nou_deal)
+    await session.commit()
+    await session.refresh(nou_deal)
+    return nou_deal
+
+@app.get("/deals")
+async def get_deals(session=Depends(get_session)):
+    statement = select(Deal).options(joinedload(Deal.municipi))
+    result = await session.execute(statement)
+    return result.scalars().all()
+
+@app.post("/interaccions")
+async def create_interaccio(data: dict, session=Depends(get_session)):
+    from datetime import datetime
+    
+    nou_interaccio = Interaccio(
+        deal_id=data.get("deal_id"),
+        tipus=data.get("tipus", "nota"),
+        contingut=data.get("contingut", ""),
+        autor=data.get("autor", "Sistema"),
+    )
+    
+    # Check if we have specific date or end date for events
+    if "data" in data and data["data"]:
+        nou_interaccio.data = datetime.fromisoformat(data["data"].replace("Z", "+00:00"))
+    if "data_fi" in data and data["data_fi"]:
+        nou_interaccio.data_fi = datetime.fromisoformat(data["data_fi"].replace("Z", "+00:00"))
+        
+    session.add(nou_interaccio)
+    await session.commit()
+    await session.refresh(nou_interaccio)
+    return nou_interaccio
+
+@app.get("/emails")
+async def get_emails(session=Depends(get_session)):
+    statement = (
+        select(Interaccio)
+        .options(joinedload(Interaccio.deal))
+        .where(Interaccio.tipus.in_(["email_in", "email_out"]))
+        .order_by(Interaccio.data.desc())
+    )
+    result = await session.execute(statement)
+    return result.scalars().all()
+

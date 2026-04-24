@@ -6,6 +6,8 @@ import Dashboard from './pages/Dashboard';
 import DealDetail from './pages/DealDetail';
 import Municipis from './pages/Municipis';
 import Contactes from './pages/Contactes';
+import Deals from './pages/Deals';
+import Emails from './pages/Emails';
 
 // Pàgines temporals
 const Placeholder = ({ title }: { title: string }) => (
@@ -25,7 +27,7 @@ function App() {
         <Routes>
           <Route path="/" element={<MainLayout />}>
             <Route index element={<Dashboard />} />
-            <Route path="deals" element={<Placeholder title="Llistat de Deals" />} />
+            <Route path="deals" element={<Deals />} />
             <Route 
               path="deals/:id" 
               element={
@@ -36,6 +38,7 @@ function App() {
             />
             <Route path="municipis" element={<Municipis />} />
             <Route path="contactes" element={<Contactes />} />
+            <Route path="emails" element={<Emails />} />
             <Route path="pagaments" element={<Placeholder title="Pagaments" />} />
             <Route path="configuracio" element={<Placeholder title="Configuració" />} />
           </Route>

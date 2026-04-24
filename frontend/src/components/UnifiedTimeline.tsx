@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useDeal } from '../context/DealContext';
 import { 
   Mail, 
@@ -6,11 +6,53 @@ import {
   Phone, 
   Calendar, 
   User, 
-  Clock 
+  Clock,
+  PlusCircle,
+  Loader2
 } from 'lucide-react';
 
 const UnifiedTimeline: React.FC = () => {
-  const { deal } = useDeal();
+  const { deal, mutate } = useDeal();
+  const [showEventForm, setShowEventForm] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [newEvent, setNewEvent] = useState({
+    tipus: 'reunio',
+    contingut: '',
+    data: '',
+    data_fi: ''
+  });
+
+  const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
+  const handleSaveEvent = async () => {
+    if (!newEvent.contingut.trim() || !newEvent.data || !deal) return;
+    
+    setIsSaving(true);
+    try {
+      const response = await fetch(`${API_BASE}/interaccions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          deal_id: deal.id,
+          tipus: newEvent.tipus,
+          contingut: newEvent.contingut,
+          data: new Date(newEvent.data).toISOString(),
+          data_fi: newEvent.data_fi ? new Date(newEvent.data_fi).toISOString() : null,
+          autor: 'Usuari'
+        })
+      });
+
+      if (response.ok) {
+        setShowEventForm(false);
+        setNewEvent({ tipus: 'reunio', contingut: '', data: '', data_fi: '' });
+        mutate();
+      }
+    } catch (error) {
+      console.error("Error guardant l'esdeveniment:", error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   if (!deal?.interaccions || deal.interaccions.length === 0) {
     return (
@@ -36,7 +78,84 @@ const UnifiedTimeline: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 relative before:absolute before:left-4 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200 dark:before:bg-slate-800">
+    <div className="space-y-6">
+      {/* Event Add Form Toggle */}
+      <div className="flex justify-end mb-4">
+        <button 
+          onClick={() => setShowEventForm(!showEventForm)}
+          className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-sm font-bold transition-colors"
+        >
+          <PlusCircle size={16} />
+          {showEventForm ? 'Cancel·lar' : 'Programar Esdeveniment'}
+        </button>
+      </div>
+
+      {showEventForm && (
+        <div className="bg-indigo-50 dark:bg-indigo-900/10 border border-indigo-100 dark:border-indigo-900/30 p-4 rounded-xl shadow-sm mb-6 animate-in slide-in-from-top-2">
+          <h4 className="font-bold text-indigo-900 dark:text-indigo-400 mb-4 flex items-center gap-2">
+            <Calendar size={16} /> Nou Esdeveniment al Calendari
+          </h4>
+          <div className="space-y-4 text-sm">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-slate-600 dark:text-slate-400 mb-1">Tipus d'Esdeveniment</label>
+                <select 
+                  className="w-full p-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 dark:text-white"
+                  value={newEvent.tipus}
+                  onChange={(e) => setNewEvent({...newEvent, tipus: e.target.value})}
+                >
+                  <option value="reunio">Reunió</option>
+                  <option value="trucada">Trucada</option>
+                  <option value="visita">Visita Comercial</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-slate-600 dark:text-slate-400 mb-1">Assumpte / Detalls</label>
+                <input 
+                  type="text" 
+                  className="w-full p-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 dark:text-white"
+                  placeholder="Ex: Presentació Projecte"
+                  value={newEvent.contingut}
+                  onChange={(e) => setNewEvent({...newEvent, contingut: e.target.value})}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-slate-600 dark:text-slate-400 mb-1">Data d'inici</label>
+                <input 
+                  type="datetime-local" 
+                  className="w-full p-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 dark:text-white"
+                  value={newEvent.data}
+                  onChange={(e) => setNewEvent({...newEvent, data: e.target.value})}
+                />
+              </div>
+              <div>
+                <label className="block text-slate-600 dark:text-slate-400 mb-1">Data final (Opcional)</label>
+                <input 
+                  type="datetime-local" 
+                  className="w-full p-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 dark:text-white"
+                  value={newEvent.data_fi}
+                  onChange={(e) => setNewEvent({...newEvent, data_fi: e.target.value})}
+                />
+              </div>
+            </div>
+            <div className="flex justify-end pt-2">
+              <button 
+                onClick={handleSaveEvent}
+                disabled={isSaving || !newEvent.contingut.trim() || !newEvent.data}
+                className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+              >
+                {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Calendar size={16} />}
+                Programar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="space-y-6 relative before:absolute before:left-4 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200 dark:before:bg-slate-800">
+
       {sortedInteraccions.map((item) => (
         <div key={item.id} className="relative pl-10 group">
           {/* Dot i Icona */}
@@ -76,6 +195,7 @@ const UnifiedTimeline: React.FC = () => {
           </div>
         </div>
       ))}
+      </div>
     </div>
   );
 };
