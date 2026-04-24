@@ -1,6 +1,6 @@
 import React from 'react';
 import useSWR from 'swr';
-import { User, Mail, Phone, MapPin, Search } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Search, Plus } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 const fetcher = (url: string) => fetch(url).then(res => res.json());
