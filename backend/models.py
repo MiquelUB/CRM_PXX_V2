@@ -61,6 +61,11 @@ class Deal(SQLModel, table=True):
 class Municipi(SQLModel, table=True):
     codi_ine: str = Field(primary_key=True)
     nom: str
+    provincia: Optional[str] = None
+    poblacio: Optional[int] = None
+    adreça: Optional[str] = None
+    email_general: Optional[str] = None
+    telefon_general: Optional[str] = None
     
     # Relacions
     deals: List["Deal"] = Relationship(back_populates="municipi")

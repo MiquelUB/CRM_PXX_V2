@@ -1,6 +1,8 @@
 import React from 'react';
 import { useDeal } from '../context/DealContext';
 import SaaSPlanModule from '../components/SaaSPlanModule';
+import MunicipiDataModule from '../components/MunicipiDataModule';
+import ContactsModule from '../components/ContactsModule';
 import UnifiedTimeline from '../components/UnifiedTimeline';
 import KimiChatDrawer from '../components/KimiChatDrawer';
 import { 
@@ -46,47 +48,13 @@ const DealDetail: React.FC = () => {
         {/* Columna Esquerra: Dades Base (4/12) */}
         <div className="col-span-12 lg:col-span-4 space-y-6">
           
-          {/* Card Municipi */}
-          <div className="bg-white dark:bg-slate-950 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-            <div className="flex items-center gap-3 mb-4 text-slate-900 dark:text-white">
-              <div className="p-2 bg-slate-100 dark:bg-slate-900 rounded-lg"><MapPin size={20} /></div>
-              <h3 className="font-bold">Municipi</h3>
-            </div>
-            <div className="space-y-3">
-              <div>
-                <p className="text-3xl font-black text-indigo-600 dark:text-indigo-400">{deal.municipi?.nom || 'Municipi no trobat'}</p>
-                <p className="text-sm text-slate-500 font-medium">Província: {deal.municipi?.provincia || 'N/A'}</p>
-              </div>
-              <div className="pt-3 border-t border-slate-100 dark:border-slate-900 flex justify-between text-sm">
-                <span className="text-slate-500">Població (Idescat)</span>
-                <span className="font-bold">{deal.municipi?.poblacio?.toLocaleString() || 'N/A'} hab.</span>
-              </div>
-            </div>
-          </div>
+          {/* Bloc 1: Dades del Municipi */}
+          <MunicipiDataModule />
 
-          {/* Card Contacte */}
-          <div className="bg-white dark:bg-slate-950 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-            <div className="flex items-center gap-3 mb-4 text-slate-900 dark:text-white">
-              <div className="p-2 bg-slate-100 dark:bg-slate-900 rounded-lg"><User size={20} /></div>
-              <h3 className="font-bold">Contacte Principal</h3>
-            </div>
-            {deal.municipi?.contactes && deal.municipi.contactes.length > 0 ? (
-              <div className="space-y-3">
-                <div>
-                  <p className="text-xl font-bold">{deal.municipi.contactes[0].nom}</p>
-                  <p className="text-sm text-indigo-600 dark:text-indigo-400 font-medium">{deal.municipi.contactes[0].carrec || 'Càrrec no especificat'}</p>
-                </div>
-                <div className="pt-3 space-y-2 text-sm">
-                  <p className="flex items-center gap-2 text-slate-600 dark:text-slate-400 underline decoration-slate-300">{deal.municipi.contactes[0].email}</p>
-                  {deal.municipi.contactes[0].telefon && <p className="font-medium">{deal.municipi.contactes[0].telefon}</p>}
-                </div>
-              </div>
-            ) : (
-              <p className="text-slate-400 text-sm italic">No hi ha contactes vinculats al municipi.</p>
-            )}
-          </div>
+          {/* Bloc 2: Contactes */}
+          <ContactsModule />
 
-          {/* Mòdul SaaS Plan */}
+          {/* Bloc 3: Mòdul SaaS Plan */}
           <SaaSPlanModule />
 
           {/* Botó Kimi (IA Agent) */}

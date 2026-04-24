@@ -163,6 +163,21 @@ async def update_deal_estat(deal_id: int, data: dict, session=Depends(get_sessio
     await session.commit()
     return {"status": "ok"}
 
+@app.patch("/deals/{deal_id}/pla-saas")
+async def update_deal_saas(deal_id: int, data: dict, session=Depends(get_session)):
+    """Actualitza el pla SaaS del Deal."""
+    statement = select(Deal).where(Deal.id == deal_id)
+    result = await session.execute(statement)
+    deal = result.scalar_one_or_none()
+    if not deal: raise HTTPException(status_code=404, detail="No trobat")
+    
+    if "pla_tipus" in data: deal.pla_tipus = data["pla_tipus"]
+    if "preu_acordat" in data: deal.preu_acordat = data["preu_acordat"]
+    
+    session.add(deal)
+    await session.commit()
+    return {"status": "ok"}
+
 # --- CONTACTES ---
 
 @app.get("/contactes")
@@ -196,6 +211,22 @@ async def get_municipis(session=Depends(get_session)):
     statement = select(Municipi)
     result = await session.execute(statement)
     return result.scalars().all()
+
+@app.patch("/municipis/{codi_ine}")
+async def update_municipi(codi_ine: str, data: dict, session=Depends(get_session)):
+    """Actualitza les dades d'un municipi."""
+    statement = select(Municipi).where(Municipi.codi_ine == codi_ine)
+    result = await session.execute(statement)
+    m = result.scalar_one_or_none()
+    if not m: raise HTTPException(status_code=404, detail="Municipi no trobat")
+    
+    for key, value in data.items():
+        if hasattr(m, key):
+            setattr(m, key, value)
+            
+    session.add(m)
+    await session.commit()
+    return {"status": "ok"}
 
 @app.post("/municipis")
 async def create_municipi(municipi: Municipi, session=Depends(get_session)):
