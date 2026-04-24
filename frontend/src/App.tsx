@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
 import { DealProvider } from './context/DealContext';
 import MainLayout from './components/MainLayout';
+import ErrorBoundary from './components/ErrorBoundary';
 import Dashboard from './pages/Dashboard';
 import DealDetail from './pages/DealDetail';
 import Municipis from './pages/Municipis';
@@ -24,24 +25,26 @@ function App() {
   return (
     <ThemeProvider>
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<MainLayout />}>
-            <Route index element={<Dashboard />} />
-            <Route path="deals" element={<Deals />} />
-            <Route 
-              path="deals/:id" 
-              element={
-                <DealProvider>
-                  <DealDetail />
-                </DealProvider>
-              } 
-            />
-            <Route path="municipis" element={<Municipis />} />
-            <Route path="contactes" element={<Contactes />} />
-            <Route path="pagaments" element={<Placeholder title="Pagaments" />} />
-            <Route path="configuracio" element={<Placeholder title="Configuració" />} />
-          </Route>
-        </Routes>
+        <ErrorBoundary>
+          <Routes>
+            <Route path="/" element={<MainLayout />}>
+              <Route index element={<Dashboard />} />
+              <Route path="deals" element={<Deals />} />
+              <Route 
+                path="deals/:id" 
+                element={
+                  <DealProvider>
+                    <DealDetail />
+                  </DealProvider>
+                } 
+              />
+              <Route path="municipis" element={<Municipis />} />
+              <Route path="contactes" element={<Contactes />} />
+              <Route path="pagaments" element={<Placeholder title="Pagaments" />} />
+              <Route path="configuracio" element={<Placeholder title="Configuració" />} />
+            </Route>
+          </Routes>
+        </ErrorBoundary>
       </BrowserRouter>
     </ThemeProvider>
   );
