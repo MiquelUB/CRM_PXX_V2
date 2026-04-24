@@ -7,8 +7,12 @@ from sqlalchemy.orm import selectinload, joinedload
 from database import get_session, init_db
 from models import Deal, Municipi, Interaccio, Contacte, Esdeveniment
 from typing import List
+from pydantic import BaseModel
+from services.ai_agent import ask_kimi_k2
 import traceback
+import logging
 from datetime import datetime
+from fastapi import APIRouter
 
 app = FastAPI(title="CRM PXX v2 - Expert Refactored API")
 
@@ -23,10 +27,10 @@ app.add_middleware(
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
-    traceback.print_exc()
+    logging.error(f"Error crític: {str(exc)}") # Log al servidor, no al client
     return JSONResponse(
         status_code=500,
-        content={"detail": str(exc)},
+        content={"detail": "S'ha produït un error intern al servidor."},
         headers={"Access-Control-Allow-Origin": "*"}
     )
 
@@ -201,3 +205,18 @@ async def get_calendar_events(session=Depends(get_session)):
         "start": e.data_hora,
         "resource": {"deal_id": e.deal_id}
     } for e in events]
+
+# --- AGENT IA (Kimi k2.5) ---
+
+agent_router = APIRouter(prefix="/agent", tags=["AI Agent"])
+
+class AgentRequest(BaseModel):
+    query: str
+
+@agent_router.post("/deals/{deal_id}/ask")
+async def chat_amb_agent(deal_id: int, payload: AgentRequest, session=Depends(get_session)):
+    """Integra l'agent al Deal Drawer."""
+    resposta = await ask_kimi_k2(session, deal_id, payload.query)
+    return {"response": resposta}
+
+app.include_router(agent_router)
