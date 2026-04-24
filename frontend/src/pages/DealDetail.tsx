@@ -2,6 +2,7 @@ import React from 'react';
 import { useDeal } from '../context/DealContext';
 import SaaSPlanModule from '../components/SaaSPlanModule';
 import UnifiedTimeline from '../components/UnifiedTimeline';
+import KimiChatDrawer from '../components/KimiChatDrawer';
 import { 
   MapPin, 
   User, 
@@ -12,6 +13,7 @@ import {
 
 const DealDetail: React.FC = () => {
   const { deal, isLoading, error } = useDeal();
+  const [isChatOpen, setIsChatOpen] = React.useState(false);
 
   if (isLoading) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div></div>;
   if (error) return <div className="p-4 bg-red-50 text-red-600 rounded-lg">Error carregant el Deal.</div>;
@@ -88,7 +90,10 @@ const DealDetail: React.FC = () => {
           <SaaSPlanModule />
 
           {/* Botó Kimi (IA Agent) */}
-          <button className="w-full p-4 bg-slate-900 text-white rounded-2xl flex items-center justify-center gap-3 font-black uppercase tracking-wider hover:scale-[1.02] transition-transform shadow-xl">
+          <button 
+            onClick={() => setIsChatOpen(true)}
+            className="w-full p-4 bg-slate-900 text-white rounded-2xl flex items-center justify-center gap-3 font-black uppercase tracking-wider hover:scale-[1.02] transition-transform shadow-xl"
+          >
             <Bot size={24} />
             Preguntar a Kimi k2.5
           </button>
@@ -106,6 +111,9 @@ const DealDetail: React.FC = () => {
           <UnifiedTimeline />
         </div>
       </div>
+
+      {/* Drawer del Xat IA */}
+      <KimiChatDrawer isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
     </div>
   );
 };
