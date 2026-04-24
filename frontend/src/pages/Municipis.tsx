@@ -4,7 +4,10 @@ import { MapPin, Plus, ExternalLink, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-const fetcher = (url: string) => fetch(url).then(res => res.json());
+const fetcher = (url: string) => fetch(url).then(res => {
+  if (!res.ok) throw new Error(`API error: ${res.status}`);
+  return res.json();
+});
 
 const Municipis: React.FC = () => {
   const { data: municipis, mutate } = useSWR(`${API_BASE}/municipis`, fetcher);

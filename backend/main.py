@@ -1,21 +1,38 @@
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from starlette.requests import Request
 from sqlmodel import select
 from sqlalchemy.orm import selectinload, joinedload
 from database import get_session, init_db
 from models import Deal, Municipi, Interaccio, Contacte
 from typing import List
+import traceback
 
 app = FastAPI(title="CRM PXX v2 - Final API")
 
 # Configurar CORS per permetre l'accés des del frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # Provem amb * i credentials False per descartar problemes de domini
+    allow_origins=["*"],
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    """Capturem TOTS els errors per garantir que les capçaleres CORS sempre s'envien."""
+    traceback.print_exc()
+    return JSONResponse(
+        status_code=500,
+        content={"detail": str(exc)},
+        headers={
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "*",
+            "Access-Control-Allow-Headers": "*",
+        }
+    )
 
 @app.on_event("startup")
 async def on_startup():
