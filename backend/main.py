@@ -55,17 +55,23 @@ async def health_check():
 
 @app.get("/deals/kanban")
 async def get_kanban_deals(session=Depends(get_session)):
-    """Retorna el board injectant municipi.nom com a títol per compatibilitat."""
-    statement = select(Deal).options(joinedload(Deal.municipi))
+    """Retorna el board amb el municipi i els seus contactes precarregats."""
+    statement = select(Deal).options(
+        joinedload(Deal.municipi).selectinload(Municipi.contactes) 
+    )
     result = await session.execute(statement)
     deals = result.scalars().all()
     
     board = {"prospecte": [], "contactat": [], "reunio": [], "tancat": []}
     for d in deals:
         deal_dict = d.dict()
-        # Injecció dinàmica de títol per no trencar el Kanban
         deal_dict["titol"] = d.municipi.nom if d.municipi else "Projecte sense nom"
-        deal_dict["municipi"] = d.municipi
+        deal_dict["municipi"] = d.municipi.dict() if d.municipi else None
+        
+        # Injectem els contactes explícitament al diccionari si existeixen
+        if d.municipi and d.municipi.contactes:
+            deal_dict["municipi"]["contactes"] = [c.dict() for c in d.municipi.contactes]
+            
         if d.estat in board:
             board[d.estat].append(deal_dict)
     return board
