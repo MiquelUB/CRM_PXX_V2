@@ -15,7 +15,7 @@ export interface Esdeveniment {
   id: number;
   titol: string;
   data_hora: string;
-  creat_per_ia: bool;
+  creat_per_ia: boolean;
 }
 
 export interface Contacte {
@@ -29,10 +29,13 @@ export interface Contacte {
 export interface Municipi {
   codi_ine: string;
   nom: string;
+  provincia?: string;
+  poblacio?: number;
 }
 
 export interface DealData {
   id: number;
+  titol: string;
   estat: string;
   municipi: Municipi;
   contactes: Contacte[];
