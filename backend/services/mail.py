@@ -1,5 +1,6 @@
 import hashlib
 import email
+import email.utils
 from email.policy import default
 from datetime import datetime, timezone
 import aioimaplib
@@ -22,17 +23,26 @@ def generate_email_hash(message_id: str, sender: str, date: datetime, subject: s
     raw_id = f"{message_id}|{sender}|{date_str}|{subject_hash}"
     return hashlib.sha256(raw_id.encode()).hexdigest()
 
-async def upsert_email_to_interaction(session: AsyncSession, deal_id: int, email_data: dict):
-    """UPSERT atòmic a PostgreSQL amb resolució de contacte."""
-    # 1. Intentem resoldre el contacte pel seu email per enllaçar-lo
-    sender_email = email_data['from'].lower()
-    # Netejar format "Nom <email@ex.com>" si cal
-    if "<" in sender_email:
-        sender_email = sender_email.split("<")[1].split(">")[0]
+import email.utils
+from sqlalchemy import select
+from ..models import Interaccio, Contacte
+
+async def resoldre_contacte_id(session: AsyncSession, remitent_brut: str) -> int | None:
+    """Extrau l'email net i busca el contacte_id a la base de dades."""
+    _, correu_net = email.utils.parseaddr(remitent_brut)
+    correu_net = correu_net.lower().strip()
     
-    contact_stmt = select(Contacte.id).where(Contacte.email == sender_email)
-    contact_res = await session.execute(contact_stmt)
-    contacte_id = contact_res.scalar_one_or_none()
+    if not correu_net:
+        return None
+        
+    statement = select(Contacte.id).where(Contacte.email == correu_net)
+    result = await session.execute(statement)
+    return result.scalar_one_or_none()
+
+async def upsert_email_to_interaction(session: AsyncSession, deal_id: int, email_data: dict):
+    """UPSERT atòmic a PostgreSQL amb resolució de contacte sanititzada."""
+    # 1. Resolem el contacte de forma segura
+    contacte_id = await resoldre_contacte_id(session, email_data['from'])
 
     # 2. Generem el hash per a la idempotència
     email_hash = generate_email_hash(

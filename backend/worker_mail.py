@@ -14,12 +14,16 @@ async def worker_loop():
     """Bucle infinit per sincronitzar emails de tots els deals actius."""
     logger.info("Iniciant IMAP Mail Worker (Phase C)...")
     
-    # Configuració IMAP (A treure d'env vars en producció)
+    # Configuració IMAP (Variables d'entorn obligatòries)
     imap_config = {
-        'host': os.getenv('IMAP_HOST', 'mail.cdmon.com'),
-        'user': os.getenv('IMAP_USER', 'crm@antigravity.cat'),
-        'password': os.getenv('IMAP_PASS', 'secret_pass')
+        'host': os.getenv('IMAP_SERVER'),
+        'user': os.getenv('IMAP_USER'),
+        'password': os.getenv('IMAP_PASS')
     }
+
+    if not all(imap_config.values()):
+        logger.error("Falten variables d'entorn de configuració IMAP (IMAP_SERVER, IMAP_USER, IMAP_PASS)")
+        return
 
     while True:
         try:
@@ -30,11 +34,12 @@ async def worker_loop():
                 deals = result.scalars().all()
                 
                 for deal in deals:
-                    logger.info(f"Sincronitzant emails per al Deal {deal.id}...")
+                    # Logging silenciós per defecte (DEBUG)
+                    logger.debug(f"Revisant emails per al Deal {deal.id}...")
                     await run_mail_sync(session, deal.id, imap_config)
             
-            # Esperem 2 minuts abans de la següent passada
-            logger.info("Passada de sincronització completada. Esperant 2 minuts...")
+            # Esperem 2 minuts
+            logger.debug("Cicle completat. Esperant 120s...")
             await asyncio.sleep(120)
             
         except Exception as e:
