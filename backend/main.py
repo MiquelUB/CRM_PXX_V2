@@ -91,17 +91,46 @@ async def create_municipi(municipi: Municipi, session=Depends(get_session)):
     session.add(municipi)
     await session.commit()
     await session.refresh(municipi)
+    
+    # Creem automàticament un Deal associat a aquest municipi (1 municipi = 1 deal en aquesta fase)
+    nou_deal = Deal(
+        titol=f"Projecte {municipi.nom}",
+        municipi_id=municipi.codi_ine,
+        estat="prospecte"
+    )
+    session.add(nou_deal)
+    await session.commit()
+    
     return municipi
 
 @app.get("/contactes")
 async def get_contactes(session=Depends(get_session)):
-    statement = select(Contacte).options(joinedload(Contacte.municipi))
+    # Corregim la càrrega: Contacte -> Deal -> Municipi
+    statement = select(Contacte).options(
+        joinedload(Contacte.deal).joinedload(Deal.municipi)
+    )
     result = await session.execute(statement)
     return result.scalars().all()
 
 @app.post("/contactes")
-async def create_contacte(contacte: Contacte, session=Depends(get_session)):
-    session.add(contacte)
+async def create_contacte(data: dict, session=Depends(get_session)):
+    # Busquem el Deal associat al municipi enviat
+    codi_ine = data.get("codi_ine_municipi")
+    statement = select(Deal).where(Deal.municipi_id == codi_ine)
+    result = await session.execute(statement)
+    deal = result.scalar_one_or_none()
+    
+    if not deal:
+        raise HTTPException(status_code=400, detail="Aquest municipi no té cap projecte (Deal) actiu.")
+    
+    nou_contacte = Contacte(
+        nom=data.get("nom"),
+        email=data.get("email"),
+        telefon=data.get("telefon"),
+        carrec=data.get("carrec"),
+        deal_id=deal.id
+    )
+    session.add(nou_contacte)
     await session.commit()
-    await session.refresh(contacte)
-    return contacte
+    await session.refresh(nou_contacte)
+    return nou_contacte
