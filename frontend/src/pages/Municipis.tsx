@@ -140,13 +140,19 @@ const Municipis: React.FC = () => {
                 <td className="px-6 py-4">
                   <div className="flex justify-center gap-2">
                     {/* Enllaç al Deal (Suposem que m.deals[0] existeix segons la lògica de 1 municipi = 1 deal) */}
-                    <Link 
-                      to={`/deals/${m.deals?.[0]?.id}`}
-                      className="p-2 text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-colors"
-                      title="Veure Deal"
-                    >
-                      <ExternalLink size={18} />
-                    </Link>
+                    {m.deals?.[0]?.id ? (
+                      <Link 
+                        to={`/deals/${m.deals[0].id}`}
+                        className="p-2 text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-colors"
+                        title="Veure Deal"
+                      >
+                        <ExternalLink size={18} />
+                      </Link>
+                    ) : (
+                      <div className="p-2 text-slate-300 cursor-not-allowed" title="Sense projecte actiu">
+                        <ExternalLink size={18} />
+                      </div>
+                    )}
                     <button 
                       onClick={() => handleDelete(m.codi_ine)}
                       className="p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-lg transition-colors"

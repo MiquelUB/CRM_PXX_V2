@@ -62,7 +62,7 @@ export const DealProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
   const { data: deal, error, isLoading, mutate } = useSWR<DealData>(
-    id ? `${API_BASE}/deals/${id}/full` : null,
+    id && id !== 'undefined' ? `${API_BASE}/deals/${id}/full` : null,
     fetcher,
     {
       revalidateOnFocus: false,
