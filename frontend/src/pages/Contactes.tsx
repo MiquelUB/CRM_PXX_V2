@@ -51,6 +51,8 @@ const Contactes: React.FC = () => {
     }
   };
 
+  console.log("AGENDA CARREGADA. Contactes:", contactes);
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -149,7 +151,6 @@ const Contactes: React.FC = () => {
           </div>
         ))}
       </div>
-      {console.log("AGENDA CARREGADA. Contactes:", contactes)}
     </div>
   );
 };
