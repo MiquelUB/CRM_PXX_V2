@@ -11,41 +11,45 @@ import {
   Loader2,
   FileText,
   Activity,
-  Send
+  Send,
+  AlertCircle
 } from 'lucide-react';
 
 const UnifiedTimeline: React.FC = () => {
   const { deal, refreshDeal } = useDeal();
-  const [isSaving, setIsSaving] = useState(false);
   const [content, setContent] = useState('');
-  const [tipus, setTipus] = useState('NOTA_MANUAL');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
-  const handleAddNote = async () => {
-    if (!content.trim() || !deal) return;
+  const handleAddNote = async (text: string) => {
+    if (!text.trim() || isSubmitting || !deal) return;
     
-    setIsSaving(true);
+    setIsSubmitting(true);
+    setError(null);
+    
     try {
       const response = await fetch(`${API_BASE}/interaccions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           deal_id: deal.id,
-          tipus: tipus,
-          contingut: content,
+          tipus: 'NOTA_MANUAL', // Hardcodejat per seguretat com s'ha demanat
+          contingut: text,
           autor: 'Usuari'
         })
       });
-
-      if (response.ok) {
-        setContent('');
-        await refreshDeal();
-      }
-    } catch (error) {
-      console.error("Error guardant la interacció:", error);
+      
+      if (!response.ok) throw new Error("Error en l'enviament");
+      
+      await refreshDeal();
+      setContent(''); // Netejar el camp de text només si hi ha èxit
+    } catch (err) {
+      console.error("Fallada al desar la nota:", err);
+      setError("No s'ha pogut desar la nota. Torna-ho a intentar.");
     } finally {
-      setIsSaving(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -70,33 +74,33 @@ const UnifiedTimeline: React.FC = () => {
         <div className="p-4 border-b border-slate-100 dark:border-slate-900 bg-slate-50 dark:bg-slate-900/30 flex items-center justify-between">
           <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-slate-500">
             <MessageSquare size={14} className="text-indigo-600" />
-            Nova Entrada a la Bitàcola
+            Nova Entrada a la Bitàcola (Nota Manual)
           </div>
-          <select 
-            value={tipus}
-            onChange={(e) => setTipus(e.target.value)}
-            className="text-[10px] font-black uppercase bg-transparent border-none outline-none text-indigo-600 cursor-pointer"
-          >
-            <option value="NOTA_MANUAL">Nota Manual</option>
-            <option value="EMAIL">Registre Email</option>
-            <option value="SISTEMA">Alerta Sistema</option>
-          </select>
         </div>
         <div className="p-4">
           <textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            placeholder="Escriu una nota, trucada o correu per registrar en l'historial del projecte..."
-            className="w-full min-h-[100px] bg-transparent text-slate-900 dark:text-white outline-none resize-none text-sm placeholder:text-slate-400 leading-relaxed"
+            disabled={isSubmitting}
+            placeholder="Escriu una nota sobre l'estat actual del projecte..."
+            className="w-full min-h-[120px] bg-transparent text-slate-900 dark:text-white outline-none resize-none text-sm placeholder:text-slate-400 leading-relaxed"
           />
+          
+          {error && (
+            <div className="flex items-center gap-2 text-rose-500 text-xs font-bold mb-3 animate-pulse">
+              <AlertCircle size={14} />
+              {error}
+            </div>
+          )}
+
           <div className="flex justify-end mt-2">
             <button
-              onClick={handleAddNote}
-              disabled={isSaving || !content.trim()}
+              onClick={() => handleAddNote(content)}
+              disabled={isSubmitting || !content.trim()}
               className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:bg-slate-400 text-white px-6 py-2 rounded-xl font-bold text-sm transition-all shadow-lg shadow-indigo-500/20 active:scale-95"
             >
-              {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
-              Registrar {tipus === 'NOTA_MANUAL' ? 'Nota' : 'Activitat'}
+              {isSubmitting ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+              Registrar Nota
             </button>
           </div>
         </div>
