@@ -86,8 +86,22 @@ async def get_municipis(session=Depends(get_session)):
     result = await session.execute(statement)
     return result.scalars().all()
 
+@app.post("/municipis")
+async def create_municipi(municipi: Municipi, session=Depends(get_session)):
+    session.add(municipi)
+    await session.commit()
+    await session.refresh(municipi)
+    return municipi
+
 @app.get("/contactes")
 async def get_contactes(session=Depends(get_session)):
     statement = select(Contacte).options(joinedload(Contacte.municipi))
     result = await session.execute(statement)
     return result.scalars().all()
+
+@app.post("/contactes")
+async def create_contacte(contacte: Contacte, session=Depends(get_session)):
+    session.add(contacte)
+    await session.commit()
+    await session.refresh(contacte)
+    return contacte

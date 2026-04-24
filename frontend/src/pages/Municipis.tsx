@@ -8,12 +8,26 @@ const fetcher = (url: string) => fetch(url).then(res => res.json());
 
 const Municipis: React.FC = () => {
   const { data: municipis, mutate } = useSWR(`${API_BASE}/municipis`, fetcher);
+  const [isModalOpen, setIsModalOpen] = React.useState(false);
+  const [formData, setFormData] = React.useState({ nom: '', provincia: '', codi_ine: '', poblacio: 0 });
 
   const handleDelete = async (id: string) => {
     if (confirm("🚨 ATENCIÓ CRÍTICA: Aquesta acció eliminarà el Deal i els Contactes associats a aquest municipi. Estàs segur?")) {
       await fetch(`${API_BASE}/municipis/${id}`, { method: 'DELETE' });
       mutate();
     }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await fetch(`${API_BASE}/municipis`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(formData)
+    });
+    setIsModalOpen(false);
+    setFormData({ nom: '', provincia: '', codi_ine: '', poblacio: 0 });
+    mutate();
   };
 
   return (
@@ -23,11 +37,80 @@ const Municipis: React.FC = () => {
           <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Directori de Municipis</h1>
           <p className="text-slate-500 text-sm">Nivell 0: Jerarquia Arrel del Sistema.</p>
         </div>
-        <button className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 transition-colors">
+        <button 
+          onClick={() => setIsModalOpen(true)}
+          className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 transition-colors"
+        >
           <Plus size={20} />
           Nou Municipi
         </button>
       </div>
+
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+            <h2 className="text-xl font-black mb-4">Afegir Nou Municipi</h2>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-black uppercase text-slate-400 mb-1">Nom</label>
+                <input 
+                  required
+                  type="text" 
+                  value={formData.nom}
+                  onChange={e => setFormData({...formData, nom: e.target.value})}
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-black uppercase text-slate-400 mb-1">Codi INE</label>
+                  <input 
+                    required
+                    type="text" 
+                    value={formData.codi_ine}
+                    onChange={e => setFormData({...formData, codi_ine: e.target.value})}
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-black uppercase text-slate-400 mb-1">Població</label>
+                  <input 
+                    type="number" 
+                    value={formData.poblacio}
+                    onChange={e => setFormData({...formData, poblacio: parseInt(e.target.value)})}
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-black uppercase text-slate-400 mb-1">Província</label>
+                <input 
+                  required
+                  type="text" 
+                  value={formData.provincia}
+                  onChange={e => setFormData({...formData, provincia: e.target.value})}
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+              <div className="flex gap-3 pt-4">
+                <button 
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="flex-1 px-4 py-2 border border-slate-200 dark:border-slate-800 rounded-xl font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors"
+                >
+                  Cancel·lar
+                </button>
+                <button 
+                  type="submit"
+                  className="flex-1 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold transition-colors"
+                >
+                  Guardar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm">
         <table className="w-full text-left border-collapse">
