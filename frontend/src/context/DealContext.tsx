@@ -24,6 +24,7 @@ export interface Contacte {
   carrec?: string;
   email: string;
   telefon?: string;
+  municipi_id: string; // FK al codi_ine
 }
 
 export interface Municipi {
@@ -31,6 +32,9 @@ export interface Municipi {
   nom: string;
   provincia?: string;
   poblacio?: number;
+  adreça?: string;
+  email_general?: string;
+  telefon_general?: string;
   contactes?: Contacte[];
 }
 
