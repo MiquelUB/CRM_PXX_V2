@@ -1,32 +1,79 @@
 /* Personalització del calendari per al mode fosc i estètica institucional */
 .rbc-calendar {
-  @apply text-slate-900 dark:text-slate-100 font-sans;
+  color: #0f172a;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+}
+:border-dark .rbc-calendar, .dark .rbc-calendar {
+  color: #f1f5f9;
 }
 
 .rbc-header {
-  @apply py-3 text-xs font-black uppercase tracking-widest text-slate-400 border-slate-200 dark:border-slate-800 !important;
+  padding-top: 0.75rem !important;
+  padding-bottom: 0.75rem !important;
+  font-size: 0.75rem !important;
+  font-weight: 900 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.1em !important;
+  color: #94a3b8 !important;
+  border-color: #e2e8f0 !important;
+}
+.dark .rbc-header {
+  border-color: #1e293b !important;
 }
 
 .rbc-off-range-bg {
-  @apply bg-slate-50 dark:bg-slate-900/50 !important;
+  background-color: #f8fafc !important;
+}
+.dark .rbc-off-range-bg {
+  background-color: rgba(15, 23, 42, 0.5) !important;
 }
 
 .rbc-month-view, .rbc-time-view, .rbc-month-row, .rbc-day-bg {
-  @apply border-slate-100 dark:border-slate-800 !important;
+  border-color: #f1f5f9 !important;
+}
+.dark .rbc-month-view, .dark .rbc-time-view, .dark .rbc-month-row, .dark .rbc-day-bg {
+  border-color: #1e293b !important;
 }
 
 .rbc-today {
-  @apply bg-indigo-50/50 dark:bg-indigo-900/10 !important;
+  background-color: rgba(238, 242, 255, 0.5) !important;
+}
+.dark .rbc-today {
+  background-color: rgba(49, 46, 129, 0.1) !important;
 }
 
 .rbc-toolbar button {
-  @apply text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg font-bold text-xs !important;
+  color: #475569 !important;
+  border-color: #e2e8f0 !important;
+  border-radius: 0.5rem !important;
+  font-weight: 700 !important;
+  font-size: 0.75rem !important;
+}
+.rbc-toolbar button:hover {
+  background-color: #f8fafc !important;
+}
+.dark .rbc-toolbar button {
+  color: #94a3b8 !important;
+  border-color: #1e293b !important;
+}
+.dark .rbc-toolbar button:hover {
+  background-color: #1e293b !important;
 }
 
 .rbc-toolbar button.rbc-active {
-  @apply bg-indigo-600 text-white border-indigo-600 hover:bg-indigo-700 !important;
+  background-color: #4f46e5 !important;
+  color: #ffffff !important;
+  border-color: #4f46e5 !important;
+}
+.rbc-toolbar button.rbc-active:hover {
+  background-color: #4338ca !important;
 }
 
 .rbc-event {
-  @apply shadow-sm transition-transform hover:scale-105 !important;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
+  transition-property: transform !important;
+  transition-duration: 150ms !important;
+}
+.rbc-event:hover {
+  transform: scale(1.05) !important;
 }

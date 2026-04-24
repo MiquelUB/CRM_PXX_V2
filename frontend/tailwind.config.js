@@ -11,7 +11,7 @@ export default {
         // Acció Principal
         brand: {
           DEFAULT: '#4f46e5', // indigo-600
-          dark: '#4338ca',
+          dark: '#4338ca',    // indigo-800
         },
         // Semàntica de Negoci (SaaS Plans)
         roure: '#b45309',      // amber-700

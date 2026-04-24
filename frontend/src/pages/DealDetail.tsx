@@ -89,7 +89,7 @@ const DealDetail: React.FC = () => {
           <SaaSPlanModule />
 
           {/* Botó Kimi (IA Agent) */}
-          <button className="w-full p-4 bg-slate-900 dark:bg-indigo-600 text-white rounded-2xl flex items-center justify-center gap-3 font-black uppercase tracking-wider hover:scale-[1.02] transition-transform shadow-xl">
+          <button className="w-full p-4 bg-slate-900 text-white rounded-2xl flex items-center justify-center gap-3 font-black uppercase tracking-wider hover:scale-[1.02] transition-transform shadow-xl">
             <Bot size={24} />
             Preguntar a Kimi k2.5
           </button>

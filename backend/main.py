@@ -1,11 +1,25 @@
 from fastapi import FastAPI, Depends, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import select
 from sqlalchemy.orm import selectinload, joinedload
-from database import get_session
+from database import get_session, init_db
 from models import Deal, Municipi, Interaccio, Contacte
 from typing import List
 
 app = FastAPI(title="CRM PXX v2 - Final API")
+
+# Configurar CORS per permetre l'accés des del frontend
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], # En producció s'hauria de restringir
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+@app.on_event("startup")
+async def on_startup():
+    await init_db()
 
 @app.get("/deals/{deal_id}/full")
 async def get_deal_full(deal_id: int, session=Depends(get_session)):
