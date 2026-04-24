@@ -99,6 +99,7 @@ async def get_deal_full(deal_id: int, session=Depends(get_session)):
         select(Deal)
         .where(Deal.id == deal_id)
         .options(
+            # Correcte en V2: Els contactes es carreguen a través del municipi
             joinedload(Deal.municipi).selectinload(Municipi.contactes),
             selectinload(Deal.interaccions).joinedload(Interaccio.contacte),
             selectinload(Deal.esdeveniments)
@@ -112,9 +113,12 @@ async def get_deal_full(deal_id: int, session=Depends(get_session)):
     
     # Preparem la resposta amb títol virtual i ordenació de timeline
     res = deal.dict()
-    res["titol"] = deal.municipi.nom
-    res["municipi"] = deal.municipi.dict()
-    res["municipi"]["contactes"] = deal.municipi.contactes
+    res["titol"] = deal.municipi.nom if deal.municipi else "Projecte sense nom"
+    res["municipi"] = deal.municipi.dict() if deal.municipi else None
+    if deal.municipi and deal.municipi.contactes:
+        res["municipi"]["contactes"] = [c.dict() for c in deal.municipi.contactes]
+        
+    # Ordenació cronològica de la bitàcorra (Timeline)
     res["interaccions"] = sorted(deal.interaccions, key=lambda x: x.data_creacio, reverse=True)
     res["esdeveniments"] = deal.esdeveniments
     
