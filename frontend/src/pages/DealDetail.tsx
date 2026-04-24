@@ -2,7 +2,6 @@ import React from 'react';
 import { useDeal } from '../context/DealContext';
 import SaaSPlanModule from '../components/SaaSPlanModule';
 import UnifiedTimeline from '../components/UnifiedTimeline';
-import NotesBox from '../components/NotesBox';
 import { 
   MapPin, 
   User, 

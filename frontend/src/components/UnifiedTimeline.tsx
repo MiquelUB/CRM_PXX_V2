@@ -10,22 +10,20 @@ import {
   PlusCircle,
   Loader2,
   FileText,
-  Activity
+  Activity,
+  Send
 } from 'lucide-react';
 
 const UnifiedTimeline: React.FC = () => {
   const { deal, refreshDeal } = useDeal();
-  const [showEventForm, setShowEventForm] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [newEvent, setNewEvent] = useState({
-    tipus: 'NOTA_MANUAL',
-    contingut: '',
-  });
+  const [content, setContent] = useState('');
+  const [tipus, setTipus] = useState('NOTA_MANUAL');
 
   const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
-  const handleSaveEvent = async () => {
-    if (!newEvent.contingut.trim() || !deal) return;
+  const handleAddNote = async () => {
+    if (!content.trim() || !deal) return;
     
     setIsSaving(true);
     try {
@@ -34,15 +32,14 @@ const UnifiedTimeline: React.FC = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           deal_id: deal.id,
-          tipus: newEvent.tipus,
-          contingut: newEvent.contingut,
+          tipus: tipus,
+          contingut: content,
           autor: 'Usuari'
         })
       });
 
       if (response.ok) {
-        setShowEventForm(false);
-        setNewEvent({ tipus: 'NOTA_MANUAL', contingut: '' });
+        setContent('');
         await refreshDeal();
       }
     } catch (error) {
@@ -52,28 +49,10 @@ const UnifiedTimeline: React.FC = () => {
     }
   };
 
-  if (!deal?.interaccions || deal.interaccions.length === 0) {
-    return (
-      <div className="space-y-4">
-        <AddInteractionForm 
-          show={showEventForm} 
-          setShow={setShowEventForm} 
-          isSaving={isSaving} 
-          newEvent={newEvent} 
-          setNewEvent={setNewEvent} 
-          handleSave={handleSaveEvent} 
-        />
-        <div className="text-center py-12 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl">
-          <p className="text-slate-500">No hi ha interaccions registrades en la Bitàcola.</p>
-        </div>
-      </div>
-    );
-  }
-
   // Ordenar per data_creacio (més recent primer)
-  const sortedInteraccions = [...deal.interaccions].sort((a, b) => 
-    new Date(b.data_creacio).getTime() - new Date(a.data_creacio).getTime()
-  );
+  const sortedInteraccions = deal?.interaccions 
+    ? [...deal.interaccions].sort((a, b) => new Date(b.data_creacio).getTime() - new Date(a.data_creacio).getTime())
+    : [];
 
   const getIcon = (tipus: string) => {
     switch (tipus) {
@@ -85,112 +64,89 @@ const UnifiedTimeline: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <AddInteractionForm 
-        show={showEventForm} 
-        setShow={setShowEventForm} 
-        isSaving={isSaving} 
-        newEvent={newEvent} 
-        setNewEvent={setNewEvent} 
-        handleSave={handleSaveEvent} 
-      />
-
-      <div className="space-y-6 relative before:absolute before:left-4 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200 dark:before:bg-slate-800">
-        {sortedInteraccions.map((item) => (
-          <div key={item.id} className="relative pl-10 group">
-            <div className="absolute left-0 top-1 w-8 h-8 rounded-full bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 flex items-center justify-center z-10 group-hover:border-indigo-500 transition-colors shadow-sm">
-              {getIcon(item.tipus)}
-            </div>
-
-            <div className="bg-white dark:bg-slate-950 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all">
-              <div className="flex justify-between items-start mb-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-                    {item.tipus}
-                  </span>
-                  <span className="text-slate-300 dark:text-slate-700">•</span>
-                  <div className="flex items-center gap-1 text-xs text-slate-500">
-                    <User size={12} />
-                    <span>{item.autor || 'Sistema'}</span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-1 text-xs text-slate-400 font-mono">
-                  <Clock size={12} />
-                  <span>{new Date(item.data_creacio).toLocaleString()}</span>
-                </div>
-              </div>
-              
-              <div className="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed">
-                {item.contingut}
-              </div>
-            </div>
+    <div className="space-y-8">
+      {/* Capsa de Vitàcola (Substitueix el NotesBox) */}
+      <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-xl animate-in fade-in slide-in-from-top-4 duration-500">
+        <div className="p-4 border-b border-slate-100 dark:border-slate-900 bg-slate-50 dark:bg-slate-900/30 flex items-center justify-between">
+          <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-slate-500">
+            <MessageSquare size={14} className="text-indigo-600" />
+            Nova Entrada a la Bitàcola
           </div>
-        ))}
-      </div>
-    </div>
-  );
-};
-
-interface FormProps {
-  show: boolean;
-  setShow: (v: boolean) => void;
-  isSaving: boolean;
-  newEvent: any;
-  setNewEvent: (v: any) => void;
-  handleSave: () => void;
-}
-
-const AddInteractionForm: React.FC<FormProps> = ({ show, setShow, isSaving, newEvent, setNewEvent, handleSave }) => (
-  <div className="space-y-4">
-    <div className="flex justify-end">
-      <button 
-        onClick={() => setShow(!show)}
-        className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white dark:bg-white dark:text-slate-950 rounded-lg text-sm font-bold transition-all hover:scale-105 active:scale-95"
-      >
-        <PlusCircle size={16} />
-        {show ? 'Cancel·lar' : 'Nova Entrada Bitàcola'}
-      </button>
-    </div>
-
-    {show && (
-      <div className="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 p-4 rounded-xl shadow-inner animate-in slide-in-from-top-2">
-        <div className="space-y-4">
-          <div>
-            <label className="block text-xs font-black uppercase text-slate-400 mb-1">Tipus de Registre</label>
-            <select 
-              className="w-full p-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500"
-              value={newEvent.tipus}
-              onChange={(e) => setNewEvent({...newEvent, tipus: e.target.value})}
+          <select 
+            value={tipus}
+            onChange={(e) => setTipus(e.target.value)}
+            className="text-[10px] font-black uppercase bg-transparent border-none outline-none text-indigo-600 cursor-pointer"
+          >
+            <option value="NOTA_MANUAL">Nota Manual</option>
+            <option value="EMAIL">Registre Email</option>
+            <option value="SISTEMA">Alerta Sistema</option>
+          </select>
+        </div>
+        <div className="p-4">
+          <textarea
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            placeholder="Escriu una nota, trucada o correu per registrar en l'historial del projecte..."
+            className="w-full min-h-[100px] bg-transparent text-slate-900 dark:text-white outline-none resize-none text-sm placeholder:text-slate-400 leading-relaxed"
+          />
+          <div className="flex justify-end mt-2">
+            <button
+              onClick={handleAddNote}
+              disabled={isSaving || !content.trim()}
+              className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:bg-slate-400 text-white px-6 py-2 rounded-xl font-bold text-sm transition-all shadow-lg shadow-indigo-500/20 active:scale-95"
             >
-              <option value="NOTA_MANUAL">Nota Manual</option>
-              <option value="EMAIL">Registre de Correu</option>
-              <option value="SISTEMA">Alerta de Sistema</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs font-black uppercase text-slate-400 mb-1">Contingut de la interacció</label>
-            <textarea 
-              rows={3}
-              className="w-full p-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500"
-              placeholder="Escriu què ha passat..."
-              value={newEvent.contingut}
-              onChange={(e) => setNewEvent({...newEvent, contingut: e.target.value})}
-            />
-          </div>
-          <div className="flex justify-end">
-            <button 
-              onClick={handleSave}
-              disabled={isSaving || !newEvent.contingut.trim()}
-              className="flex items-center gap-2 bg-indigo-600 text-white px-6 py-2 rounded-lg font-black hover:bg-indigo-700 disabled:opacity-50 transition-all"
-            >
-              {isSaving ? <Loader2 size={16} className="animate-spin" /> : <PlusCircle size={16} />}
-              Registrar
+              {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+              Registrar {tipus === 'NOTA_MANUAL' ? 'Nota' : 'Activitat'}
             </button>
           </div>
         </div>
       </div>
-    )}
-  </div>
-);
+
+      {/* Timeline Section */}
+      <div className="space-y-6">
+        <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 px-2">Historial d'activitat</h3>
+        
+        {sortedInteraccions.length === 0 ? (
+          <div className="text-center py-12 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl">
+            <p className="text-slate-500 text-sm italic">No hi ha registres en la bitàcola encara.</p>
+          </div>
+        ) : (
+          <div className="space-y-6 relative before:absolute before:left-4 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200 dark:before:bg-slate-800">
+            {sortedInteraccions.map((item) => (
+              <div key={item.id} className="relative pl-10 group">
+                <div className="absolute left-0 top-1 w-8 h-8 rounded-full bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 flex items-center justify-center z-10 group-hover:border-indigo-500 transition-colors shadow-sm">
+                  {getIcon(item.tipus)}
+                </div>
+
+                <div className="bg-white dark:bg-slate-950 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all">
+                  <div className="flex justify-between items-start mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                        {item.tipus}
+                      </span>
+                      <span className="text-slate-300 dark:text-slate-700">•</span>
+                      <div className="flex items-center gap-1 text-xs text-slate-500">
+                        <User size={12} />
+                        <span>{item.autor || 'Sistema'}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 text-xs text-slate-400 font-mono">
+                      <Clock size={12} />
+                      <span>{new Date(item.data_creacio).toLocaleString()}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed">
+                    {item.contingut}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
 
 export default UnifiedTimeline;
