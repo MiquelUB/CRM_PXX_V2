@@ -26,3 +26,11 @@ async def get_session() -> AsyncSession:
     """Dependency per obtenir la sessió de la base de dades en els endpoints."""
     async with async_session_maker() as session:
         yield session
+
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def get_session_context():
+    """Context manager per a scripts externs (com el Worker de Mail)."""
+    async with async_session_maker() as session:
+        yield session

@@ -27,6 +27,7 @@ class Interaccio(SQLModel, table=True):
     tipus: str # 'EMAIL', 'NOTA_MANUAL', 'SISTEMA'
     contingut: str
     data_creacio: datetime = Field(default_factory=datetime.utcnow)
+    external_id: Optional[str] = Field(default=None, unique=True, index=True)
     
     # Relacions
     deal: "Deal" = Relationship(back_populates="interaccions")

@@ -29,9 +29,9 @@ async def upsert_email_to_interaction(session: AsyncSession, deal_id: int, email
 
     # El dialecte PostgreSQL insert permet fer l'upsert natiu
     stmt = insert(Interaccio).values(
-        tipus="email_in",
+        tipus="EMAIL",
         contingut=email_data['body'],
-        data=email_data['date'].astimezone(timezone.utc),
+        data_creacio=email_data['date'].astimezone(timezone.utc),
         autor=email_data['from'],
         external_id=email_hash,
         deal_id=deal_id
