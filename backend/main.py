@@ -204,6 +204,32 @@ async def create_contacte(data: dict, session=Depends(get_session)):
     await session.refresh(nou_contacte)
     return nou_contacte
 
+@app.put("/contactes/{contact_id}")
+async def update_contacte(contact_id: int, data: dict, session=Depends(get_session)):
+    statement = select(Contacte).where(Contacte.id == contact_id)
+    result = await session.execute(statement)
+    contacte = result.scalar_one_or_none()
+    if not contacte: raise HTTPException(status_code=404, detail="Contacte no trobat")
+    
+    for key, value in data.items():
+        if hasattr(contacte, key):
+            setattr(contacte, key, value)
+            
+    session.add(contacte)
+    await session.commit()
+    return {"status": "ok"}
+
+@app.delete("/contactes/{contact_id}")
+async def delete_contacte(contact_id: int, session=Depends(get_session)):
+    statement = select(Contacte).where(Contacte.id == contact_id)
+    result = await session.execute(statement)
+    contacte = result.scalar_one_or_none()
+    if not contacte: raise HTTPException(status_code=404, detail="Contacte no trobat")
+    
+    await session.delete(contacte)
+    await session.commit()
+    return {"status": "ok"}
+
 # --- MUNICIPIS ---
 
 @app.get("/municipis")
