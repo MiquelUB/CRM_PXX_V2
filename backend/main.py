@@ -124,6 +124,13 @@ async def get_deal_full(deal_id: int, session=Depends(get_session)):
     
     return res
 
+@app.get("/deals")
+async def get_deals(session=Depends(get_session)):
+    """Llistat de tots els deals amb el seu municipi associat."""
+    statement = select(Deal).options(joinedload(Deal.municipi))
+    result = await session.execute(statement)
+    return result.scalars().all()
+
 @app.post("/deals")
 async def create_deal(data: dict, session=Depends(get_session)):
     nou_deal = Deal(
@@ -136,6 +143,13 @@ async def create_deal(data: dict, session=Depends(get_session)):
     await session.commit()
     await session.refresh(nou_deal)
     return nou_deal
+
+@app.get("/calendar/events")
+async def get_calendar_events(session=Depends(get_session)):
+    """Retorna els esdeveniments per al calendari del Dashboard."""
+    statement = select(Esdeveniment).options(joinedload(Esdeveniment.deal).joinedload(Deal.municipi))
+    result = await session.execute(statement)
+    return result.scalars().all()
 
 @app.patch("/deals/{deal_id}/estat")
 async def update_deal_estat(deal_id: int, data: dict, session=Depends(get_session)):
