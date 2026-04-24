@@ -113,7 +113,7 @@ const MunicipiDataModule: React.FC = () => {
               <input 
                 type="number" 
                 value={formData.poblacio}
-                onChange={e => setFormData({...formData, poblacio: parseInt(e.target.value)})}
+                onChange={e => setFormData({...formData, poblacio: parseInt(e.target.value) || 0})}
                 className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 outline-none text-sm"
               />
             ) : (

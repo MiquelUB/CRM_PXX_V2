@@ -47,6 +47,8 @@ const ContactsModule: React.FC = () => {
 
   const contactes = deal.municipi.contactes || [];
 
+  console.log("V2 CARREGADA. Municipi actual:", deal?.municipi?.codi_ine);
+
   return (
     <div className="bg-white dark:bg-slate-950 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
       <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-900 pb-4 mb-2">
