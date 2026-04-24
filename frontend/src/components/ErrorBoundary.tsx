@@ -1,4 +1,5 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+import React, { Component } from 'react';
+import type { ErrorInfo, ReactNode } from 'react';
 import { AlertTriangle, RefreshCcw } from 'lucide-react';
 
 interface Props {
@@ -46,7 +47,7 @@ class ErrorBoundary extends Component<Props, State> {
               <RefreshCcw size={18} />
               Recarregar Aplicació
             </button>
-            {process.env.NODE_ENV === 'development' && (
+            {import.meta.env.DEV && (
               <pre className="mt-4 p-4 bg-slate-100 dark:bg-slate-900 text-left text-[10px] text-rose-500 overflow-auto rounded-lg max-h-40 font-mono">
                 {this.state.error?.toString()}
               </pre>
@@ -56,7 +57,7 @@ class ErrorBoundary extends Component<Props, State> {
       );
     }
 
-    return this.children;
+    return this.props.children;
   }
 }
 

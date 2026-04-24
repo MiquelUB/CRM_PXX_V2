@@ -8,7 +8,6 @@ import DealDetail from './pages/DealDetail';
 import Municipis from './pages/Municipis';
 import Contactes from './pages/Contactes';
 import Deals from './pages/Deals';
-import Emails from './pages/Emails';
 
 // Pàgines temporals
 const Placeholder = ({ title }: { title: string }) => (
