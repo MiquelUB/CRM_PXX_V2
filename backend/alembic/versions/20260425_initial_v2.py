@@ -1,8 +1,8 @@
 """Initial V2 Schema
 
-Revision ID: 20260425_v2
-Revises: 
-Create Date: 2026-04-25 18:30:00.000000
+Revision ID: f02c213a3580
+Revises: None
+Create Date: 2026-04-25 18:00:00.000000
 
 """
 from alembic import op
@@ -11,7 +11,7 @@ import sqlmodel
 
 
 # revision identifiers, used by Alembic.
-revision = '20260425_v2'
+revision = 'f02c213a3580'
 down_revision = None
 branch_labels = None
 depends_on = None
