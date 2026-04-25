@@ -117,17 +117,24 @@ const Municipis: React.FC = () => {
                       className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
                     />
                   </div>
-                  <div>
-                    <label className="block text-[10px] font-black uppercase text-slate-400 mb-1.5 tracking-widest">Pla SaaS Inicial</label>
+                  <div className="bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-2xl border border-indigo-100 dark:border-indigo-800/50">
+                    <label className="block text-[10px] font-black uppercase text-indigo-900 dark:text-indigo-400 mb-1.5 tracking-widest">
+                      Pla SaaS a Assignar *
+                    </label>
                     <select 
+                      required
                       value={formData.pla_assignat}
                       onChange={(e) => setFormData({...formData, pla_assignat: e.target.value})}
-                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold text-indigo-600"
+                      className="w-full bg-white dark:bg-slate-900 border border-indigo-200 dark:border-indigo-800 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold text-indigo-600 shadow-sm"
                     >
                       <option value="Pla Basic">Pla Basic</option>
                       <option value="Pla Pro">Pla Pro</option>
                       <option value="Pla Premium">Pla Premium</option>
                     </select>
+                    <p className="mt-2 text-[9px] text-indigo-600 dark:text-indigo-400 italic font-medium flex items-center gap-1">
+                      <ShieldCheck size={10} />
+                      Això crearà automàticament el Deal al Kanban.
+                    </p>
                   </div>
                 </div>
 
