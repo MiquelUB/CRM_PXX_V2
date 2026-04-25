@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.requests import Request
 from sqlmodel import select
+from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlalchemy.orm import selectinload, joinedload
 from database import get_session, init_db, engine
 from models import Deal, Municipi, Interaccio, Contacte, EstatDeal, OnboardingRequest

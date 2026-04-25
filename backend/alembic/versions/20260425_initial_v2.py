@@ -18,8 +18,15 @@ depends_on = None
 
 
 def upgrade() -> None:
-    # 1. Crear Enum per a l'estat del Deal
-    op.execute("CREATE TYPE estatdeal AS ENUM ('NOU', 'CONTACTAT', 'DEMO', 'PROPOSTA', 'TANCAT')")
+    # 1. Crear Enum per a l'estat del Deal de forma idempotent
+    op.execute("""
+        DO $$ 
+        BEGIN 
+            IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'estatdeal') THEN
+                CREATE TYPE estatdeal AS ENUM ('NOU', 'CONTACTAT', 'DEMO', 'PROPOSTA', 'TANCAT');
+            END IF;
+        END $$;
+    """)
 
     # 2. Taula MUNICIPI
     op.create_table(
