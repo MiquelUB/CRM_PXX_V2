@@ -1,7 +1,7 @@
 import React from 'react';
 import useSWR from 'swr';
-import { MapPin, Plus, ExternalLink, Trash2 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { MapPin, Plus, ExternalLink, Trash2, ShieldCheck, Info } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 const fetcher = (url: string) => fetch(url).then(res => {
@@ -10,9 +10,15 @@ const fetcher = (url: string) => fetch(url).then(res => {
 });
 
 const Municipis: React.FC = () => {
+  const navigate = useNavigate();
   const { data: municipis, mutate } = useSWR(`${API_BASE}/municipis`, fetcher);
   const [isModalOpen, setIsModalOpen] = React.useState(false);
-  const [formData, setFormData] = React.useState({ nom: '', provincia: '', codi_ine: '', poblacio: 0 });
+  const [formData, setFormData] = React.useState({ 
+    nom: '', 
+    codi_ine: '', 
+    adreca_fisica: '',
+    pla_assignat: 'Pla Basic' 
+  });
 
   const handleDelete = async (id: string) => {
     if (confirm("🚨 ATENCIÓ CRÍTICA: Aquesta acció eliminarà el Deal i els Contactes associats a aquest municipi. Estàs segur?")) {
@@ -23,14 +29,37 @@ const Municipis: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await fetch(`${API_BASE}/municipis`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(formData)
-    });
-    setIsModalOpen(false);
-    setFormData({ nom: '', provincia: '', codi_ine: '', poblacio: 0 });
-    mutate();
+    try {
+      const payload = {
+        municipi: {
+          nom: formData.nom,
+          codi_ine: formData.codi_ine,
+          adreca_fisica: formData.adreca_fisica
+        },
+        pla_assignat: formData.pla_assignat,
+        contactes: [] // Podríem afegir el primer contacte aquí en el futur
+      };
+
+      const response = await fetch(`${API_BASE}/deals/onboarding`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        setIsModalOpen(false);
+        setFormData({ nom: '', codi_ine: '', adreca_fisica: '', pla_assignat: 'Pla Basic' });
+        mutate();
+        // Redirecció immediata al nou Deal per començar a treballar
+        navigate(`/deals/${result.deal_id}`);
+      } else {
+        const error = await response.json();
+        alert(`Error en l'onboarding: ${error.detail || 'Error desconegut'}`);
+      }
+    } catch (error) {
+      console.error("Error creant el municipi:", error);
+    }
   };
 
   return (
@@ -42,72 +71,98 @@ const Municipis: React.FC = () => {
         </div>
         <button 
           onClick={() => setIsModalOpen(true)}
-          className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 transition-colors"
+          className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 transition-colors shadow-lg shadow-indigo-500/20"
         >
           <Plus size={20} />
-          Nou Municipi
+          Nou Onboarding
         </button>
       </div>
 
       {isModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 w-full max-w-md shadow-2xl">
-            <h2 className="text-xl font-black mb-4">Afegir Nou Municipi</h2>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-xs font-black uppercase text-slate-400 mb-1">Nom</label>
-                <input 
-                  required
-                  type="text" 
-                  value={formData.nom}
-                  onChange={e => setFormData({...formData, nom: e.target.value})}
-                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-500"
-                />
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 w-full max-w-lg shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-3 bg-indigo-600 text-white rounded-2xl">
+                <ShieldCheck size={24} />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div>
+                <h2 className="text-2xl font-black text-slate-900 dark:text-white">Nou Onboarding</h2>
+                <p className="text-slate-500 text-xs uppercase font-bold tracking-widest">Creació de Municipi + Deal</p>
+              </div>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div className="grid grid-cols-1 gap-5">
                 <div>
-                  <label className="block text-xs font-black uppercase text-slate-400 mb-1">Codi INE</label>
+                  <label className="block text-[10px] font-black uppercase text-slate-400 mb-1.5 tracking-widest">Nom de l'Ajuntament</label>
                   <input 
                     required
                     type="text" 
-                    value={formData.codi_ine}
-                    onChange={e => setFormData({...formData, codi_ine: e.target.value})}
-                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="Ex: Ajuntament de Viladecans"
+                    value={formData.nom}
+                    onChange={e => setFormData({...formData, nom: e.target.value})}
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
                   />
                 </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] font-black uppercase text-slate-400 mb-1.5 tracking-widest">Codi INE</label>
+                    <input 
+                      required
+                      type="text" 
+                      placeholder="Ex: 08301"
+                      value={formData.codi_ine}
+                      onChange={e => setFormData({...formData, codi_ine: e.target.value})}
+                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black uppercase text-slate-400 mb-1.5 tracking-widest">Pla SaaS Inicial</label>
+                    <select 
+                      value={formData.pla_assignat}
+                      onChange={(e) => setFormData({...formData, pla_assignat: e.target.value})}
+                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold text-indigo-600"
+                    >
+                      <option value="Pla Basic">Pla Basic</option>
+                      <option value="Pla Pro">Pla Pro</option>
+                      <option value="Pla Premium">Pla Premium</option>
+                    </select>
+                  </div>
+                </div>
+
                 <div>
-                  <label className="block text-xs font-black uppercase text-slate-400 mb-1">Població</label>
+                  <label className="block text-[10px] font-black uppercase text-slate-400 mb-1.5 tracking-widest">Adreça Física / Seu</label>
                   <input 
-                    type="number" 
-                    value={formData.poblacio}
-                    onChange={e => setFormData({...formData, poblacio: parseInt(e.target.value)})}
-                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-500"
+                    type="text" 
+                    placeholder="Ex: Plaça de la Vila, 1"
+                    value={formData.adreca_fisica}
+                    onChange={e => setFormData({...formData, adreca_fisica: e.target.value})}
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
                   />
                 </div>
               </div>
-              <div>
-                <label className="block text-xs font-black uppercase text-slate-400 mb-1">Província</label>
-                <input 
-                  required
-                  type="text" 
-                  value={formData.provincia}
-                  onChange={e => setFormData({...formData, provincia: e.target.value})}
-                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-500"
-                />
+
+              <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/30 rounded-xl p-4 flex gap-3">
+                <Info size={18} className="text-amber-600 shrink-0 mt-0.5" />
+                <p className="text-[10px] text-amber-700 dark:text-amber-400 leading-relaxed">
+                  Aquesta acció és <strong>atòmica</strong>: crearà automàticament un Deal en estat 'Nou' al Kanban i vincularà el pla seleccionat.
+                </p>
               </div>
-              <div className="flex gap-3 pt-4">
+
+              <div className="flex gap-3 pt-2">
                 <button 
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="flex-1 px-4 py-2 border border-slate-200 dark:border-slate-800 rounded-xl font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors"
+                  className="flex-1 px-4 py-3 border border-slate-200 dark:border-slate-800 rounded-xl font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors"
                 >
                   Cancel·lar
                 </button>
                 <button 
                   type="submit"
-                  className="flex-1 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold transition-colors"
+                  className="flex-1 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold transition-all shadow-lg shadow-indigo-500/25 active:scale-95"
                 >
-                  Guardar
+                  Confirmar Onboarding
                 </button>
               </div>
             </form>
