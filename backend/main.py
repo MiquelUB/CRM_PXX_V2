@@ -19,15 +19,7 @@ from contextlib import asynccontextmanager
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Gestió segura del cicle de vida de l'aplicació."""
-    try:
-        logging.info("Iniciant connexions i inicialitzant DB...")
-        await init_db()
-        logging.info("DB inicialitzada correctament.")
-    except Exception as e:
-        # Si la DB falla, no matem el servidor (per evitar 502 Bad Gateway en boot).
-        # Així el servidor HTTP aixeca i podem veure els logs o respondre 503.
-        logging.critical(f"ERROR CRÍTIC a l'arrencada (DB): {e}")
-        logging.error(traceback.format_exc())
+    logging.info("Backend arrencat correctament. L'esquema es gestiona via Alembic.")
     yield
     logging.info("Tancant connexions...")
 
@@ -70,11 +62,13 @@ async def health_check():
 # --- DEALS (PROJECTES) ---
 
 @app.get("/deals/kanban")
-async def get_kanban_deals(session=Depends(get_session)):
-    """Retorna el board amb el municipi i els seus contactes precarregats."""
+async def get_kanban_deals(session: AsyncSession = Depends(get_session)):
+    """Obté els deals actius estructurats per a les columnes del Kanban."""
     try:
+        # Utilitzem selectinload per evitar errors de lazy loading asíncron
         statement = select(Deal).where(Deal.is_active == True).options(
-            joinedload(Deal.municipi).selectinload(Municipi.contactes) 
+            selectinload(Deal.municipi).selectinload(Municipi.contactes),
+            selectinload(Deal.interaccions)
         )
         result = await session.execute(statement)
         deals = result.scalars().all()
@@ -106,16 +100,12 @@ async def get_kanban_deals(session=Depends(get_session)):
         logging.error(f"Error crític a /deals/kanban: {str(e)}")
         raise HTTPException(status_code=500, detail="Error intern carregant el Kanban")
 
-@app.get("/deals/{deal_id}/full")
-async def get_deal_full(deal_id: int, session=Depends(get_session)):
-    """Endpoint unificat 360º: Deal + Municipi + Contactes + Timeline."""
-    statement = (
-        select(Deal)
-        .where(Deal.id == deal_id)
-        .options(
-            joinedload(Deal.municipi).selectinload(Municipi.contactes),
-            selectinload(Deal.interaccions)
-        )
+@app.get("/deals/{deal_id}")
+async def get_deal_full(deal_id: int, session: AsyncSession = Depends(get_session)):
+    """Retorna tota la informació d'un deal ( Epicentre )."""
+    statement = select(Deal).where(Deal.id == deal_id).options(
+        selectinload(Deal.municipi).selectinload(Municipi.contactes),
+        selectinload(Deal.interaccions)
     )
     result = await session.execute(statement)
     deal = result.scalar_one_or_none()
