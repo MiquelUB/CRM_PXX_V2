@@ -3,9 +3,9 @@
 # Esperar a que la base de dades estigui llista (opcional si usem healthchecks al compose)
 echo "Esperant a la base de dades..."
 
-# Executar migracions d'Alembic (Deshabilitat temporalment per evitar crash si no hi ha versions)
-# echo "Executant migracions..."
-# alembic upgrade head
+# Executar migracions d'Alembic de forma automàtica
+echo "Executant migracions (Alembic upgrade head)..."
+alembic upgrade head
 
 # Iniciar l'aplicació
 echo "Iniciant FastAPI al port 8000..."
