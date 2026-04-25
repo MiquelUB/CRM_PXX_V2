@@ -21,8 +21,10 @@ async def reset_database():
     engine = create_async_engine(url)
     try:
         async with engine.begin() as conn:
-            print("Netejant esquema public...")
-            await conn.execute(text("DROP SCHEMA public CASCADE; CREATE SCHEMA public;"))
+            print("Netejant esquema public (DROP)...")
+            await conn.execute(text("DROP SCHEMA public CASCADE;"))
+            print("Recreant esquema public (CREATE)...")
+            await conn.execute(text("CREATE SCHEMA public;"))
         print("OK: Base de dades buidada correctament.")
     except Exception as e:
         print(f"ERROR: {e}")
