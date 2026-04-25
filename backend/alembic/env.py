@@ -6,6 +6,8 @@ from sqlmodel import SQLModel
 
 # Importació obligatòria de models per registrar-los al metadata
 from models import Municipi, Deal, Contacte, Interaccio
+from database import DATABASE_URL
+import os
 
 from alembic import context
 
@@ -19,7 +21,7 @@ target_metadata = SQLModel.metadata
 
 def run_migrations_offline() -> None:
     """Mode offline: genera el SQL sense connectar-se a la BD."""
-    url = config.get_main_option("sqlalchemy.url")
+    url = DATABASE_URL
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -38,6 +40,7 @@ def do_run_migrations(connection):
 async def run_migrations_online() -> None:
     """Mode online (asíncron): configurat per a PostgreSQL + asyncpg."""
     configuration = config.get_section(config.config_ini_section)
+    configuration["sqlalchemy.url"] = DATABASE_URL
     
     connectable = async_engine_from_config(
         configuration,
