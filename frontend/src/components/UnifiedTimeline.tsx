@@ -34,7 +34,10 @@ const UnifiedTimeline: React.FC = () => {
           deal_id: deal.id,
           tipus: 'NOTA_MANUAL',
           contingut: text,
-          metadata_json: { origen: 'web_frontend' }
+          metadata_json: { 
+            autor: 'Usuari Humà', // Traçabilitat injectada al JSON
+            origen: 'web_frontend' 
+          }
         })
       });
       
@@ -50,7 +53,6 @@ const UnifiedTimeline: React.FC = () => {
     }
   };
 
-  // Ordenar per data_creacio (més recent primer)
   const sortedInteraccions = deal?.interaccions 
     ? [...deal.interaccions].sort((a, b) => new Date(b.data_creacio).getTime() - new Date(a.data_creacio).getTime())
     : [];
@@ -113,31 +115,55 @@ const UnifiedTimeline: React.FC = () => {
           </div>
         ) : (
           <div className="space-y-6 relative before:absolute before:left-4 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200 dark:before:bg-slate-800">
-            {sortedInteraccions.map((item) => (
-              <div key={item.id} className="relative pl-10 group">
-                <div className="absolute left-0 top-1 w-8 h-8 rounded-full bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 flex items-center justify-center z-10 group-hover:border-indigo-500 transition-colors shadow-sm">
-                  {getIcon(item.tipus)}
-                </div>
+            {sortedInteraccions.map((item) => {
+              const metadata = item.metadata_json || {};
+              const autor = metadata.autor || 'Sistema'; // Recuperem l'autor del JSON de forma segura
 
-                <div className="bg-white dark:bg-slate-950 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all">
-                  <div className="flex justify-between items-start mb-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-                        {item.tipus}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1 text-xs text-slate-400 font-mono">
-                      <Clock size={12} />
-                      <span>{new Date(item.data_creacio).toLocaleString()}</span>
-                    </div>
+              return (
+                <div key={item.id} className="relative pl-10 group">
+                  <div className="absolute left-0 top-1 w-8 h-8 rounded-full bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 flex items-center justify-center z-10 group-hover:border-indigo-500 transition-colors shadow-sm">
+                    {getIcon(item.tipus)}
                   </div>
-                  
-                  <div className="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed">
-                    {item.contingut}
+
+                  <div className="bg-white dark:bg-slate-950 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all">
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 dark:text-indigo-400">
+                          {autor}
+                        </span>
+                        <span className="text-slate-300 dark:text-slate-700">•</span>
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                          {item.tipus}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1 text-xs text-slate-400 font-mono">
+                        <Clock size={12} />
+                        <span>{new Date(item.data_creacio).toLocaleString()}</span>
+                      </div>
+                    </div>
+                    
+                    <div className="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed">
+                      {item.contingut}
+                    </div>
+
+                    {/* Renderitzat segur de metadades addicionals (Debug/Sistemes) */}
+                    {Object.keys(metadata).filter(k => k !== 'autor').length > 0 && (
+                      <div className="mt-3 p-2 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-100 dark:border-slate-800">
+                        <pre className="text-[10px] text-slate-500 dark:text-slate-400 overflow-x-auto">
+                          {JSON.stringify(metadata, (key, value) => key === 'autor' ? undefined : value, 1)}
+                        </pre>
+                      </div>
+                    )}
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
           </div>
         )}
       </div>

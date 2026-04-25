@@ -7,7 +7,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlalchemy.orm import selectinload, joinedload
 from database import get_session, init_db, engine
 from models import Deal, Municipi, Interaccio, Contacte, EstatDeal, OnboardingRequest
-from typing import List
+from typing import List, Optional
 from pydantic import BaseModel
 from services.ai_agent import ask_kimi_k2
 import traceback
@@ -58,7 +58,16 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 @app.get("/health")
 async def health_check():
-    return {"status": "ok", "version": "2.1.1", "timestamp": datetime.utcnow().isoformat()}
+    return {"status": "ok", "version": "2.1.2", "timestamp": datetime.utcnow().isoformat()}
+
+# --- ESQUEMES DE VALIDACIÓ (PATCH) ---
+
+class DealStatusUpdate(BaseModel):
+    estat_kanban: EstatDeal
+
+class DealSaaSUpdate(BaseModel):
+    pla_assignat: Optional[str] = None
+    preu_acordat: Optional[float] = None
 
 # --- DEALS (PROJECTES) ---
 
@@ -201,28 +210,30 @@ async def get_calendar_events_raw(session=Depends(get_session)):
     return result.scalars().all()
 
 @app.patch("/deals/{deal_id}/estat")
-async def update_deal_estat(deal_id: int, data: dict, session: AsyncSession = Depends(get_session)):
+async def update_deal_estat(deal_id: int, request: DealStatusUpdate, session: AsyncSession = Depends(get_session)):
+    """Actualització segura de l'estat via Pydantic."""
     statement = select(Deal).where(Deal.id == deal_id)
     result = await session.execute(statement)
     deal = result.scalar_one_or_none()
     if not deal: raise HTTPException(status_code=404, detail="No trobat")
     
-    if "estat_kanban" in data: 
-        deal.estat_kanban = EstatDeal(data["estat_kanban"])
+    deal.estat_kanban = request.estat_kanban
     
     session.add(deal)
     await session.commit()
-    return {"status": "ok"}
+    return {"status": "ok", "nou_estat": deal.estat_kanban}
 
 @app.patch("/deals/{deal_id}/pla-saas")
-async def update_deal_saas(deal_id: int, data: dict, session: AsyncSession = Depends(get_session)):
-    """Actualitza el pla SaaS del Deal."""
+async def update_deal_saas(deal_id: int, request: DealSaaSUpdate, session: AsyncSession = Depends(get_session)):
+    """Actualització segura del pla SaaS via Pydantic."""
     statement = select(Deal).where(Deal.id == deal_id)
     result = await session.execute(statement)
     deal = result.scalar_one_or_none()
     if not deal: raise HTTPException(status_code=404, detail="No trobat")
     
-    if "pla_assignat" in data: deal.pla_assignat = data["pla_assignat"]
+    update_data = request.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(deal, key, value)
     
     session.add(deal)
     await session.commit()
