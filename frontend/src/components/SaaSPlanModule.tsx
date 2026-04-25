@@ -8,7 +8,7 @@ const SaaSPlanModule: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   
   const [planData, setPlanData] = useState({
-    pla_tipus: 'roure',
+    pla_assignat: 'Pla Pro',
     preu_acordat: 0
   });
 
@@ -17,8 +17,8 @@ const SaaSPlanModule: React.FC = () => {
   useEffect(() => {
     if (deal) {
       setPlanData({
-        pla_tipus: deal.pla_tipus || 'roure',
-        preu_acordat: deal.preu_acordat || 0
+        pla_assignat: deal.pla_assignat || 'Pla Pro',
+        preu_acordat: 0 // El preu acordat ara es gestiona via metadata o camp futur
       });
     }
   }, [deal]);
@@ -30,7 +30,7 @@ const SaaSPlanModule: React.FC = () => {
       const response = await fetch(`${API_BASE}/deals/${deal.id}/pla-saas`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(planData)
+        body: JSON.stringify({ pla_assignat: planData.pla_assignat })
       });
       if (response.ok) {
         await refreshDeal();
@@ -44,11 +44,10 @@ const SaaSPlanModule: React.FC = () => {
   };
 
   const getColorClass = () => {
-    switch(planData.pla_tipus) {
-      case 'territori': return 'text-emerald-600 border-emerald-200 bg-emerald-50 dark:bg-emerald-900/20 dark:border-emerald-800';
-      case 'mirador': return 'text-sky-600 border-sky-200 bg-sky-50 dark:bg-sky-900/20 dark:border-sky-800';
-      default: return 'text-amber-700 border-amber-200 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-800';
-    }
+    const p = planData.pla_assignat?.toLowerCase();
+    if (p?.includes('territori')) return 'text-emerald-600 border-emerald-200 bg-emerald-50 dark:bg-emerald-900/20 dark:border-emerald-800';
+    if (p?.includes('mirador')) return 'text-sky-600 border-sky-200 bg-sky-50 dark:bg-sky-900/20 dark:border-sky-800';
+    return 'text-amber-700 border-amber-200 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-800';
   };
 
   if (!deal) return null;
@@ -58,7 +57,7 @@ const SaaSPlanModule: React.FC = () => {
       <div className="flex justify-between items-center mb-4">
         <div className="flex items-center gap-2">
           <Package size={20} />
-          <h3 className="font-bold text-lg uppercase tracking-tight">Pla {planData.pla_tipus}</h3>
+          <h3 className="font-bold text-lg uppercase tracking-tight">{planData.pla_assignat}</h3>
         </div>
         <button 
           onClick={() => isEditing ? handleSave() : setIsEditing(true)}
@@ -71,36 +70,19 @@ const SaaSPlanModule: React.FC = () => {
 
       <div className="space-y-4">
         <div>
-          <label className="block text-xs font-black uppercase opacity-50 mb-1">Tipus de Pla</label>
+          <label className="block text-xs font-black uppercase opacity-50 mb-1">Pla Assignat</label>
           {isEditing ? (
             <select 
-              value={planData.pla_tipus}
-              onChange={(e) => setPlanData({...planData, pla_tipus: e.target.value})}
+              value={planData.pla_assignat}
+              onChange={(e) => setPlanData({...planData, pla_assignat: e.target.value})}
               className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-800 rounded px-2 py-1 outline-none"
             >
-              <option value="roure">Roure</option>
-              <option value="mirador">Mirador</option>
-              <option value="territori">Territori</option>
+              <option value="Pla Pro">Pla Pro</option>
+              <option value="Pla Avançat">Pla Avançat</option>
+              <option value="Pla Elit">Pla Elit</option>
             </select>
           ) : (
-            <p className="font-bold text-slate-900 dark:text-white capitalize">{planData.pla_tipus}</p>
-          )}
-        </div>
-
-        <div>
-          <label className="block text-xs font-black uppercase opacity-50 mb-1">Inversió Anual (Preu Acordat)</label>
-          {isEditing ? (
-            <div className="flex items-center gap-2">
-              <input 
-                type="number" 
-                value={planData.preu_acordat}
-                onChange={(e) => setPlanData({...planData, preu_acordat: parseFloat(e.target.value)})}
-                className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-800 rounded px-2 py-1 outline-none"
-              />
-              <span className="font-bold">€</span>
-            </div>
-          ) : (
-            <p className="font-bold text-slate-900 dark:text-white text-2xl">{planData.preu_acordat.toLocaleString()} €</p>
+            <p className="font-bold text-slate-900 dark:text-white capitalize">{planData.pla_assignat}</p>
           )}
         </div>
       </div>

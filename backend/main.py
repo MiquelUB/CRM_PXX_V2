@@ -201,20 +201,21 @@ async def get_calendar_events_raw(session=Depends(get_session)):
     return result.scalars().all()
 
 @app.patch("/deals/{deal_id}/estat")
-async def update_deal_estat(deal_id: int, data: dict, session=Depends(get_session)):
+async def update_deal_estat(deal_id: int, data: dict, session: AsyncSession = Depends(get_session)):
     statement = select(Deal).where(Deal.id == deal_id)
     result = await session.execute(statement)
     deal = result.scalar_one_or_none()
     if not deal: raise HTTPException(status_code=404, detail="No trobat")
     
-    if "estat" in data: 
-        deal.estat_kanban = EstatDeal(data["estat"])
+    if "estat_kanban" in data: 
+        deal.estat_kanban = EstatDeal(data["estat_kanban"])
+    
     session.add(deal)
     await session.commit()
     return {"status": "ok"}
 
 @app.patch("/deals/{deal_id}/pla-saas")
-async def update_deal_saas(deal_id: int, data: dict, session=Depends(get_session)):
+async def update_deal_saas(deal_id: int, data: dict, session: AsyncSession = Depends(get_session)):
     """Actualitza el pla SaaS del Deal."""
     statement = select(Deal).where(Deal.id == deal_id)
     result = await session.execute(statement)
@@ -329,13 +330,12 @@ async def create_municipi(municipi: Municipi, session=Depends(get_session)):
 # --- TIMELINE (INTERACCIONS) ---
 
 @app.post("/interaccions")
-async def create_interaccio(data: dict, session=Depends(get_session)):
+async def create_interaccio(data: dict, session: AsyncSession = Depends(get_session)):
     nou = Interaccio(
         deal_id=data.get("deal_id"),
-        contacte_id=data.get("contacte_id"),
         tipus=data.get("tipus", "NOTA_MANUAL"),
         contingut=data.get("contingut", ""),
-        data_creacio=datetime.utcnow()
+        metadata_json=data.get("metadata_json", {})
     )
     session.add(nou)
     await session.commit()

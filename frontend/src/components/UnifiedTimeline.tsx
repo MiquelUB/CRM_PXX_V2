@@ -32,16 +32,16 @@ const UnifiedTimeline: React.FC = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           deal_id: deal.id,
-          tipus: 'NOTA_MANUAL', // Hardcodejat per seguretat com s'ha demanat
+          tipus: 'NOTA_MANUAL',
           contingut: text,
-          autor: 'Usuari'
+          metadata_json: { origen: 'web_frontend' }
         })
       });
       
       if (!response.ok) throw new Error("Error en l'enviament");
       
       await refreshDeal();
-      setContent(''); // Netejar el camp de text només si hi ha èxit
+      setContent('');
     } catch (err) {
       console.error("Fallada al desar la nota:", err);
       setError("No s'ha pogut desar la nota. Torna-ho a intentar.");
@@ -66,7 +66,7 @@ const UnifiedTimeline: React.FC = () => {
 
   return (
     <div className="space-y-8">
-      {/* Capsa de Vitàcola (Substitueix el NotesBox) */}
+      {/* Capsa de Vitàcola */}
       <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-xl animate-in fade-in slide-in-from-top-4 duration-500">
         <div className="p-4 border-b border-slate-100 dark:border-slate-900 bg-slate-50 dark:bg-slate-900/30 flex items-center justify-between">
           <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-slate-500">
@@ -125,11 +125,6 @@ const UnifiedTimeline: React.FC = () => {
                       <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
                         {item.tipus}
                       </span>
-                      <span className="text-slate-300 dark:text-slate-700">•</span>
-                      <div className="flex items-center gap-1 text-xs text-slate-500">
-                        <User size={12} />
-                        <span>{item.autor || 'Sistema'}</span>
-                      </div>
                     </div>
                     <div className="flex items-center gap-1 text-xs text-slate-400 font-mono">
                       <Clock size={12} />

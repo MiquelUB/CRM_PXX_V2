@@ -29,11 +29,11 @@ const DealDetail: React.FC = () => {
           <div className="flex items-center gap-2 text-slate-500 mb-1">
             <span className="text-xs font-bold uppercase tracking-widest">ID #{deal.id}</span>
             <span className="px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 rounded text-[10px] font-bold uppercase">
-              {deal.estat}
+              {deal.estat_kanban}
             </span>
           </div>
           <h1 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">
-            {deal.municipi?.nom || deal.titol}
+            {deal.municipi?.nom}
           </h1>
         </div>
         <div className="flex gap-3">

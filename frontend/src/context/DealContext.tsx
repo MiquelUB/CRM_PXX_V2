@@ -8,14 +8,7 @@ export interface Interaccio {
   tipus: string;
   contingut: string;
   data_creacio: string;
-  autor?: string;
-}
-
-export interface Esdeveniment {
-  id: number;
-  titol: string;
-  data_hora: string;
-  creat_per_ia: boolean;
+  metadata_json?: any;
 }
 
 export interface Contacte {
@@ -24,15 +17,13 @@ export interface Contacte {
   carrec?: string;
   email: string;
   telefon?: string;
-  municipi_id: string; // FK al codi_ine
 }
 
 export interface Municipi {
+  id: number;
   codi_ine: string;
   nom: string;
-  provincia?: string;
-  poblacio?: number;
-  adreça?: string;
+  adreca_fisica?: string;
   email_general?: string;
   telefon_general?: string;
   contactes?: Contacte[];
@@ -40,13 +31,10 @@ export interface Municipi {
 
 export interface DealData {
   id: number;
-  titol: string;
-  estat: string;
+  estat_kanban: string;
+  pla_assignat: string;
   municipi: Municipi;
   interaccions: Interaccio[];
-  esdeveniments: Esdeveniment[];
-  pla_tipus?: 'roure' | 'mirador' | 'territori';
-  preu_acordat?: number;
 }
 
 interface DealContextType {
@@ -68,7 +56,7 @@ export const DealProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
   const { data: deal, error, isLoading, mutate } = useSWR<DealData>(
-    id && id !== 'undefined' ? `${API_BASE}/deals/${id}/full` : null,
+    id && id !== 'undefined' ? `${API_BASE}/deals/${id}` : null,
     fetcher,
     {
       revalidateOnFocus: false,
