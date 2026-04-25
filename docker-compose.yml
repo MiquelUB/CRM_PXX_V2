@@ -24,6 +24,8 @@ services:
       IMAP_HOST: ${IMAP_HOST}
       IMAP_USER: ${IMAP_USER}
       IMAP_PASSWORD: ${IMAP_PASSWORD}
+    ports:
+      - "8000:8000"
     depends_on:
       db:
         condition: service_healthy
@@ -37,6 +39,8 @@ services:
     restart: always
     depends_on:
       - backend
+    ports:
+      - "80:80"
 
 volumes:
   postgres_data:

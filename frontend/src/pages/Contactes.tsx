@@ -119,7 +119,7 @@ const Contactes: React.FC = () => {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {contactes?.map((c: any) => (
+        {Array.isArray(contactes) ? contactes.map((c: any) => (
           <div key={c.id} className="bg-white dark:bg-slate-950 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all group relative">
             <div className="flex items-start justify-between mb-4">
               <div className="p-3 bg-slate-50 dark:bg-slate-900 rounded-xl text-indigo-600 dark:text-indigo-400 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
@@ -149,7 +149,7 @@ const Contactes: React.FC = () => {
               <button onClick={() => handleDelete(c.id)} className="text-xs font-bold text-slate-500 hover:text-rose-600">Eliminar</button>
             </div>
           </div>
-        ))}
+        )) : null}
       </div>
     </div>
   );

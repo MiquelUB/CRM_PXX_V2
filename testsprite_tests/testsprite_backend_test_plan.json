@@ -1,52 +1,52 @@
 [
   {
     "id": "TC001",
-    "title": "get_deal_full_details_success",
-    "description": "Verify that GET /deals/{deal_id}/full with a valid numeric deal_id returns 200 OK with JSON containing deal metadata, parent municipality, related contacts, and interactions array."
+    "title": "get_health_status",
+    "description": "Verify that GET /health returns 200 with status, version, and timestamp when the API is healthy."
   },
   {
     "id": "TC002",
-    "title": "get_deal_full_details_not_found",
-    "description": "Verify that GET /deals/{deal_id}/full with a non-existent deal_id returns 404 Not Found with an appropriate error payload."
+    "title": "get_deals_kanban_list",
+    "description": "Verify that GET /deals/kanban returns 200 with an object mapping columns to deal lists on successful retrieval."
   },
   {
     "id": "TC003",
-    "title": "get_deal_full_details_invalid_id",
-    "description": "Verify that GET /deals/{deal_id}/full with an invalid id format (e.g., non-numeric like 'abc') returns 400 Bad Request with validation error details."
+    "title": "post_create_new_deal",
+    "description": "Verify that POST /deals with valid municipi_id, estat, pla_tipus, and preu_acordat creates a new deal and returns 200 with the created deal object."
   },
   {
     "id": "TC004",
-    "title": "get_deal_full_details_database_error",
-    "description": "Verify that GET /deals/{deal_id}/full when the database query fails returns 500 Internal Server Error with a diagnostic message."
+    "title": "get_deal_full_360_view",
+    "description": "Verify that GET /deals/{deal_id}/full returns 200 with the aggregated 360 view object including deal details, municipi, contactes, and interaccions for an existing deal."
   },
   {
     "id": "TC005",
-    "title": "get_calendar_events_success",
-    "description": "Verify that GET /calendar/events with valid start and end date parameters returns 200 OK with an array of calendar events including timestamp, type, summary, related_deal_id, and interaction_id."
+    "title": "get_contactes_list",
+    "description": "Verify that GET /contactes returns 200 with an array of contacts on successful retrieval."
   },
   {
     "id": "TC006",
-    "title": "get_calendar_events_invalid_parameters",
-    "description": "Verify that GET /calendar/events without start/end parameters or with malformed dates returns 400 Bad Request with parameter validation errors."
+    "title": "post_create_new_contacte",
+    "description": "Verify that POST /contactes with valid municipi_id, name, role, and email creates a new contact and returns 200 with the created contact object."
   },
   {
     "id": "TC007",
-    "title": "get_calendar_events_data_store_unreachable",
-    "description": "Verify that GET /calendar/events when the data store is unreachable returns 500 Internal Server Error indicating event retrieval failure."
+    "title": "get_municipis_list",
+    "description": "Verify that GET /municipis returns 200 with a list of municipalities on successful retrieval."
   },
   {
     "id": "TC008",
-    "title": "get_kanban_deals_success",
-    "description": "Verify that GET /deals/kanban returns 200 OK with payload grouping deals into status columns, each deal including id, title, municipality_id, and ordering index."
+    "title": "get_calendar_events",
+    "description": "Verify that GET /calendar/events with valid start and end query parameters returns 200 with events array formatted for react-big-calendar."
   },
   {
     "id": "TC009",
-    "title": "get_kanban_deals_empty",
-    "description": "Verify that GET /deals/kanban when no deals exist returns 200 OK with empty column arrays allowing the client to render empty Kanban columns."
+    "title": "post_create_new_interaccio",
+    "description": "Verify that POST /interaccions with valid deal_id, type, content, and timestamp creates a new interaction and returns 200 with the created interaction object."
   },
   {
     "id": "TC010",
-    "title": "get_kanban_deals_database_timeout",
-    "description": "Verify that GET /deals/kanban when the database times out returns 503 Service Unavailable with a retry suggestion message."
+    "title": "post_ask_ai_agent_about_deal",
+    "description": "Verify that POST /agent/deals/{deal_id}/ask with a valid question returns 200 with the AI agent response object containing summary, key facts, and suggestions."
   }
 ]

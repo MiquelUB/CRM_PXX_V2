@@ -5,14 +5,17 @@ from sqlalchemy.orm import selectinload, joinedload
 from sqlmodel import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime
-from models import Deal, Interaccio, Esdeveniment
+from models import Deal, Interaccio
 
 # SDK configurat per a OpenRouter
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
-client = AsyncOpenAI(
-    base_url="https://openrouter.ai/api/v1",
-    api_key=OPENROUTER_API_KEY
-)
+def get_ai_client():
+    api_key = os.getenv("OPENROUTER_API_KEY")
+    if not api_key:
+        return None
+    return AsyncOpenAI(
+        base_url="https://openrouter.ai/api/v1",
+        api_key=api_key
+    )
 
 async def get_deal_history_context(session: AsyncSession, deal_id: int) -> str:
     """Recupera tota la cronologia del Deal per construir el context del LLM."""
@@ -31,7 +34,8 @@ async def get_deal_history_context(session: AsyncSession, deal_id: int) -> str:
         return "No s'ha trobat informació per a aquest Deal."
 
     history = sorted(deal.interaccions, key=lambda x: x.data_creacio)
-    context_lines = [f"CONTEXT DEL DEAL: {deal.municipi.nom} (Estat: {deal.estat})"]
+    m_name = deal.municipi.nom if deal.municipi else "Municipi desconegut"
+    context_lines = [f"CONTEXT DEL DEAL: {m_name} (Estat: {deal.estat_kanban})"]
     for i in history:
         date_str = i.data_creacio.strftime("%Y-%m-%d %H:%M")
         context_lines.append(f"[{date_str}]: {i.tipus} - {i.contingut}")
@@ -69,6 +73,10 @@ async def ask_kimi_k2(session: AsyncSession, deal_id: int, user_query: str):
         {"role": "user", "content": user_query}
     ]
 
+    client = get_ai_client()
+    if not client:
+        return "Error: OPENROUTER_API_KEY no configurada. L'Agent IA està desactivat."
+
     try:
         # 1. Primera crida (Intent d'acció)
         response = await client.chat.completions.create(
@@ -89,15 +97,19 @@ async def ask_kimi_k2(session: AsyncSession, deal_id: int, user_query: str):
                     # 3. Execució real a la Base de Dades
                     try:
                         data_dt = datetime.fromisoformat(args.get("data_hora").replace("Z", "+00:00"))
-                        nou_event = Esdeveniment(
+                        nova_cita = Interaccio(
                             deal_id=deal_id,
-                            titol=args.get("titol"),
-                            data_hora=data_dt,
-                            creat_per_ia=True
+                            tipus="calendar",
+                            contingut=args.get("titol"),
+                            data_creacio=datetime.utcnow(),
+                            metadata_json={
+                                "data_hora": data_dt.isoformat(),
+                                "creat_per": "ai_agent"
+                            }
                         )
-                        session.add(nou_event)
+                        session.add(nova_cita)
                         await session.commit()
-                        result_msg = "Esdeveniment creat i guardat a la base de dades correctament."
+                        result_msg = "Cita creada correctament a la bitàcola del projecte."
                     except Exception as db_err:
                         result_msg = f"Error al guardar a DB: {str(db_err)}"
                     

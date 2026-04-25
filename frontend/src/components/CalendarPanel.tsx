@@ -57,11 +57,11 @@ const CalendarPanel: React.FC = () => {
     }
   };
 
-  const formattedEvents = events?.map((e: any) => ({
+  const formattedEvents = Array.isArray(events) ? events.map((e: any) => ({
     ...e,
-    start: new Date(e.start),
-    end: new Date(e.end)
-  })) || [];
+    start: e.start ? new Date(e.start) : new Date(),
+    end: e.end ? new Date(e.end) : (e.start ? new Date(new Date(e.start).getTime() + 3600000) : new Date())
+  })) : [];
 
   return (
     <div className="h-full bg-white dark:bg-slate-950 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">

@@ -1,0 +1,739 @@
+[
+  {
+    "id": "TC001",
+    "title": "Daily pipeline loop: move deal then open it and confirm stage is consistent",
+    "description": "Verifies that after moving a deal to a new stage on the Kanban, opening that deal shows the same stage/state in the deal detail view.",
+    "category": "Dashboard Kanban",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Wait for the Kanban board of deals to load"
+      },
+      {
+        "type": "action",
+        "description": "Drag a deal card from one stage column to a different stage column"
+      },
+      {
+        "type": "action",
+        "description": "Click the moved deal card to open its detail view"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the deal detail view indicates the deal is in the new stage"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC002",
+    "title": "Move a deal to a new stage and keep the board consistent",
+    "description": "Verifies a user can move a deal card to another Kanban stage and the deal is shown in the target column afterward.",
+    "category": "Dashboard Kanban",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Wait for the Kanban board of deals to load"
+      },
+      {
+        "type": "action",
+        "description": "Drag a deal card from one stage column to another stage column"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the moved deal card is displayed in the target stage column"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC003",
+    "title": "Open a deal from the Kanban and view deal details",
+    "description": "Verifies a user can open a deal from the dashboard Kanban and the deal detail view loads with deal context, municipi data, and contacts.",
+    "category": "Dashboard Kanban",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Wait for the Kanban board of deals to load"
+      },
+      {
+        "type": "action",
+        "description": "Click a deal card to open its detail view"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the deal detail view is displayed with municipi information and a contacts section"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC004",
+    "title": "Create a new contact from within a deal and see it in both deal and directory",
+    "description": "Verifies a user can create a contact from a deal and the contact appears in the deal contacts list and in the global contacts directory.",
+    "category": "Create Contact in Deal (Contacts linked to Municipi)",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Wait for the Kanban board of deals to load"
+      },
+      {
+        "type": "action",
+        "description": "Click a deal card to open its detail view"
+      },
+      {
+        "type": "action",
+        "description": "Open the contact creation form"
+      },
+      {
+        "type": "action",
+        "description": "Fill Test Contact Name into the contact name field"
+      },
+      {
+        "type": "action",
+        "description": "Fill test.contact@example.com into the contact email field"
+      },
+      {
+        "type": "action",
+        "description": "Fill Test Role into the contact role/title field"
+      },
+      {
+        "type": "action",
+        "description": "Save the contact"
+      },
+      {
+        "type": "action",
+        "description": "Click the navigation link to open the contacts directory"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the new contact is displayed in the contacts directory list"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC005",
+    "title": "Update municipal address and see it persist in deal detail",
+    "description": "This test verifies a user can edit a municipi address from within a deal and the updated municipal data is shown in the deal detail and persists after refresh.",
+    "category": "Edit Municipal Data from Deal",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Click a deal card in the Kanban to open its detail view"
+      },
+      {
+        "type": "action",
+        "description": "Click the control to edit municipal data"
+      },
+      {
+        "type": "action",
+        "description": "Fill \"Updated Address 123\" into the municipi address field"
+      },
+      {
+        "type": "action",
+        "description": "Save changes"
+      },
+      {
+        "type": "action",
+        "description": "Press F5"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the municipi address displays as \"Updated Address 123\" in the deal detail"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC006",
+    "title": "Change SaaS plan and annual investment and see it persist after refresh",
+    "description": "This test verifies a user can update a deal’s SaaS plan and annual investment and the updated commercial terms display correctly and persist after reload.",
+    "category": "Edit SaaS Plan in Deal",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Click a deal card in the Kanban to open its detail view"
+      },
+      {
+        "type": "action",
+        "description": "Click the control to edit the SaaS plan"
+      },
+      {
+        "type": "action",
+        "description": "Select a different plan type than the currently selected one"
+      },
+      {
+        "type": "action",
+        "description": "Fill \"12000\" into the annual investment field"
+      },
+      {
+        "type": "action",
+        "description": "Save changes"
+      },
+      {
+        "type": "action",
+        "description": "Press F5"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the deal summary shows the newly selected plan type and annual investment \"12000\""
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC007",
+    "title": "Edit a contact and see the updated contact reflected in the directory list",
+    "description": "Verifies a user can edit a contact name or role and the updated contact is shown in the contacts list afterward.",
+    "category": "Contacts Directory (Agenda)",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /contactes"
+      },
+      {
+        "type": "action",
+        "description": "Wait for the contacts list to load"
+      },
+      {
+        "type": "action",
+        "description": "Click a contact in the list to open its record"
+      },
+      {
+        "type": "action",
+        "description": "Modify the contact role/title field to Updated Role"
+      },
+      {
+        "type": "action",
+        "description": "Save changes"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the updated contact is displayed in the contacts list"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC008",
+    "title": "Create a new calendar event linked to a deal or municipi and see it appear",
+    "description": "This test verifies a user can create an event with date/time and description linked to a deal or municipi and it appears on the calendar after saving.",
+    "category": "Calendar (Events & Visits)",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /calendari"
+      },
+      {
+        "type": "action",
+        "description": "Wait for the calendar view to finish loading"
+      },
+      {
+        "type": "action",
+        "description": "Open the new event form"
+      },
+      {
+        "type": "action",
+        "description": "Select a valid date in the date field"
+      },
+      {
+        "type": "action",
+        "description": "Select a valid time in the time field"
+      },
+      {
+        "type": "action",
+        "description": "Fill \"Site visit - Test Event\" into the description field"
+      },
+      {
+        "type": "action",
+        "description": "Link the event to a Deal or Municipi context"
+      },
+      {
+        "type": "action",
+        "description": "Save the event"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify an event with description \"Site visit - Test Event\" is displayed on the calendar"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC009",
+    "title": "New calendar event remains visible after page reload",
+    "description": "This test verifies a newly created calendar event persists and is still shown after refreshing the calendar page.",
+    "category": "Calendar (Events & Visits)",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /calendari"
+      },
+      {
+        "type": "action",
+        "description": "Open the new event form"
+      },
+      {
+        "type": "action",
+        "description": "Select a valid date in the date field"
+      },
+      {
+        "type": "action",
+        "description": "Select a valid time in the time field"
+      },
+      {
+        "type": "action",
+        "description": "Fill \"Persistent Event 001\" into the description field"
+      },
+      {
+        "type": "action",
+        "description": "Link the event to a Deal or Municipi context"
+      },
+      {
+        "type": "action",
+        "description": "Save the event"
+      },
+      {
+        "type": "action",
+        "description": "Press F5"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify an event with description \"Persistent Event 001\" is displayed on the calendar"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC010",
+    "title": "Browse contacts directory and open a contact record",
+    "description": "Verifies a user can navigate to the contacts directory, see an alphabetic list, and open a contact record for viewing/editing.",
+    "category": "Contacts Directory (Agenda)",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /contactes"
+      },
+      {
+        "type": "action",
+        "description": "Wait for the contacts list to load"
+      },
+      {
+        "type": "action",
+        "description": "Click a contact in the list to open its record"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the contact detail/edit view is displayed"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC011",
+    "title": "Change only SaaS plan tier without altering investment",
+    "description": "This test verifies a user can change the SaaS plan tier while keeping the existing annual investment unchanged in the deal summary.",
+    "category": "Edit SaaS Plan in Deal",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Click a deal card in the Kanban to open its detail view"
+      },
+      {
+        "type": "action",
+        "description": "Note the currently displayed annual investment value"
+      },
+      {
+        "type": "action",
+        "description": "Click the control to edit the SaaS plan"
+      },
+      {
+        "type": "action",
+        "description": "Select a different plan type than the currently selected one"
+      },
+      {
+        "type": "action",
+        "description": "Save changes"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the plan type has changed and the annual investment matches the previously noted value"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC012",
+    "title": "Edit both address and population together from deal context",
+    "description": "This test verifies a user can update multiple municipi fields in one save and the deal detail reflects both updates.",
+    "category": "Edit Municipal Data from Deal",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Click a deal card in the Kanban to open its detail view"
+      },
+      {
+        "type": "action",
+        "description": "Click the control to edit municipal data"
+      },
+      {
+        "type": "action",
+        "description": "Fill \"New Civic Center Ave\" into the municipi address field"
+      },
+      {
+        "type": "action",
+        "description": "Fill \"54321\" into the municipi population field"
+      },
+      {
+        "type": "action",
+        "description": "Save changes"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the deal detail shows address \"New Civic Center Ave\" and population \"54321\""
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC013",
+    "title": "Cancel municipal data edits without changing displayed values",
+    "description": "This test verifies a user can abandon municipi edits from a deal and the original municipal data remains unchanged in the deal detail.",
+    "category": "Edit Municipal Data from Deal",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Click a deal card in the Kanban to open its detail view"
+      },
+      {
+        "type": "action",
+        "description": "Note the currently displayed municipi address value"
+      },
+      {
+        "type": "action",
+        "description": "Click the control to edit municipal data"
+      },
+      {
+        "type": "action",
+        "description": "Fill \"Temporary Address Change\" into the municipi address field"
+      },
+      {
+        "type": "action",
+        "description": "Cancel or close the municipal editor without saving"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the municipi address displayed in the deal detail is unchanged from the previously noted value"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC014",
+    "title": "Create an event without linking to a deal/municipi when allowed",
+    "description": "This test verifies a user can save a general calendar event without selecting a deal or municipi if the UI allows it and it appears on the calendar.",
+    "category": "Calendar (Events & Visits)",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /calendari"
+      },
+      {
+        "type": "action",
+        "description": "Open the new event form"
+      },
+      {
+        "type": "action",
+        "description": "Select a valid date in the date field"
+      },
+      {
+        "type": "action",
+        "description": "Select a valid time in the time field"
+      },
+      {
+        "type": "action",
+        "description": "Fill \"General event no link\" into the description field"
+      },
+      {
+        "type": "action",
+        "description": "Save the event"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify an event with description \"General event no link\" is displayed on the calendar"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC015",
+    "title": "Prevent saving a deal contact when email is missing",
+    "description": "Verifies the contact creation form blocks saving when the email field is empty and shows a validation error.",
+    "category": "Create Contact in Deal (Contacts linked to Municipi)",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Wait for the Kanban board of deals to load"
+      },
+      {
+        "type": "action",
+        "description": "Click a deal card to open its detail view"
+      },
+      {
+        "type": "action",
+        "description": "Open the contact creation form"
+      },
+      {
+        "type": "action",
+        "description": "Fill Test Contact Missing Email into the contact name field"
+      },
+      {
+        "type": "action",
+        "description": "Fill Test Role into the contact role/title field"
+      },
+      {
+        "type": "action",
+        "description": "Attempt to save the contact"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify an email-required validation error is visible and the contact is not added to the deal contacts list"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC016",
+    "title": "Prevent saving municipal population when non-numeric",
+    "description": "This test verifies the municipal editor blocks saving when population is not a number and a validation error is shown.",
+    "category": "Edit Municipal Data from Deal",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Click a deal card in the Kanban to open its detail view"
+      },
+      {
+        "type": "action",
+        "description": "Click the control to edit municipal data"
+      },
+      {
+        "type": "action",
+        "description": "Fill \"twelve thousand\" into the municipi population field"
+      },
+      {
+        "type": "action",
+        "description": "Save changes"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a population format validation error is visible"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC017",
+    "title": "Block saving SaaS terms when annual investment is negative",
+    "description": "This test verifies the SaaS plan editor prevents saving when the annual investment is negative and shows a validation error.",
+    "category": "Edit SaaS Plan in Deal",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Click a deal card in the Kanban to open its detail view"
+      },
+      {
+        "type": "action",
+        "description": "Click the control to edit the SaaS plan"
+      },
+      {
+        "type": "action",
+        "description": "Fill \"-100\" into the annual investment field"
+      },
+      {
+        "type": "action",
+        "description": "Save changes"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify an investment value validation error is visible"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC018",
+    "title": "Prevent saving a contact when a required field is cleared",
+    "description": "Verifies the contact edit form blocks saving when a required field like name is cleared and shows a validation error.",
+    "category": "Contacts Directory (Agenda)",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /contactes"
+      },
+      {
+        "type": "action",
+        "description": "Wait for the contacts list to load"
+      },
+      {
+        "type": "action",
+        "description": "Click a contact in the list to open its record"
+      },
+      {
+        "type": "action",
+        "description": "Clear the contact name field"
+      },
+      {
+        "type": "action",
+        "description": "Attempt to save changes"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a required-field validation error is visible and the contact is not saved"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC019",
+    "title": "Prevent saving municipal population when empty",
+    "description": "This test verifies the municipal editor shows a validation error and does not save when the population field is cleared.",
+    "category": "Edit Municipal Data from Deal",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Click a deal card in the Kanban to open its detail view"
+      },
+      {
+        "type": "action",
+        "description": "Click the control to edit municipal data"
+      },
+      {
+        "type": "action",
+        "description": "Fill \"\" into the municipi population field"
+      },
+      {
+        "type": "action",
+        "description": "Save changes"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a population validation error is visible"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC020",
+    "title": "Require date when creating a calendar event",
+    "description": "This test verifies the calendar event form blocks saving when the date is missing and shows a validation error.",
+    "category": "Calendar (Events & Visits)",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /calendari"
+      },
+      {
+        "type": "action",
+        "description": "Open the new event form"
+      },
+      {
+        "type": "action",
+        "description": "Fill \"Missing date event\" into the description field"
+      },
+      {
+        "type": "action",
+        "description": "Link the event to a Deal or Municipi context"
+      },
+      {
+        "type": "action",
+        "description": "Save the event"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a date required validation error is visible"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC021",
+    "title": "Cancel creating a calendar event without adding it to the calendar",
+    "description": "This test verifies a user can cancel out of the new event form and no new event is added to the calendar.",
+    "category": "Calendar (Events & Visits)",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /calendari"
+      },
+      {
+        "type": "action",
+        "description": "Open the new event form"
+      },
+      {
+        "type": "action",
+        "description": "Fill \"Cancelled event should not save\" into the description field"
+      },
+      {
+        "type": "action",
+        "description": "Cancel or close the new event form without saving"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify no event with description \"Cancelled event should not save\" is displayed on the calendar"
+      }
+    ],
+    "priority": "Low"
+  }
+]

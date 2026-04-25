@@ -5,176 +5,114 @@
 
 ## 1️⃣ Document Metadata
 - **Project Name:** CRM_PXX_V2
-- **Date:** 2026-04-23
+- **Date:** 2026-04-25
 - **Prepared by:** TestSprite AI Team
 
 ---
 
 ## 2️⃣ Requirement Validation Summary
 
-#### Test TC001 get_deal_full_details_success
-- **Test Code:** [TC001_get_deal_full_details_success.py](./TC001_get_deal_full_details_success.py)
-- **Test Error:** Traceback (most recent call last):
-  File "<string>", line 20, in test_get_deal_full_details_success
-  File "/var/lang/lib/python3.12/site-packages/requests/models.py", line 1024, in raise_for_status
-    raise HTTPError(http_error_msg, response=self)
-requests.exceptions.HTTPError: 404 Client Error: Not Found for url: http://localhost:8000/deals
-
-During handling of the above exception, another exception occurred:
-
-Traceback (most recent call last):
-  File "/var/task/handler.py", line 258, in run_with_retry
-    exec(code, exec_env)
-  File "<string>", line 56, in <module>
-  File "<string>", line 44, in test_get_deal_full_details_success
-AssertionError: Request failed: 404 Client Error: Not Found for url: http://localhost:8000/deals
-
-- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/9728b68d-f67c-4e90-91b0-b1b34b9f6d3b/f15abc2d-c166-46e3-92cc-2321f7989437
-- **Status:** ❌ Failed
-- **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
----
-
-#### Test TC002 get_deal_full_details_not_found
-- **Test Code:** [TC002_get_deal_full_details_not_found.py](./TC002_get_deal_full_details_not_found.py)
-- **Test Error:** Traceback (most recent call last):
-  File "/var/task/handler.py", line 258, in run_with_retry
-    exec(code, exec_env)
-  File "<string>", line 32, in <module>
-  File "<string>", line 17, in test_get_deal_full_details_not_found
-AssertionError: Expected 404 Not Found but got 500
-
-- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/9728b68d-f67c-4e90-91b0-b1b34b9f6d3b/561d18cf-cda8-4181-9a88-6c731028f0f1
-- **Status:** ❌ Failed
-- **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
----
-
-#### Test TC003 get_deal_full_details_invalid_id
-- **Test Code:** [TC003_get_deal_full_details_invalid_id.py](./TC003_get_deal_full_details_invalid_id.py)
-- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/9728b68d-f67c-4e90-91b0-b1b34b9f6d3b/aecd332b-55b9-4734-82ca-a31885660c4f
+#### Test TC001 get_health_status
+- **Test Code:** [TC001_get_health_status.py](./TC001_get_health_status.py)
+- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/de31328d-a86e-479d-ae77-02ad66598657/9c501fbb-856b-4b13-a3d8-079a28976b82
 - **Status:** ✅ Passed
 - **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
 ---
 
-#### Test TC004 get_deal_full_details_database_error
-- **Test Code:** [TC004_get_deal_full_details_database_error.py](./TC004_get_deal_full_details_database_error.py)
+#### Test TC002 get_deals_kanban_list
+- **Test Code:** [TC002_get_deals_kanban_list.py](./TC002_get_deals_kanban_list.py)
+- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/de31328d-a86e-479d-ae77-02ad66598657/a795537d-b77f-4a5c-9a1e-e6f043f5cb70
+- **Status:** ✅ Passed
+- **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
+---
+
+#### Test TC003 post_create_new_deal
+- **Test Code:** [TC003_post_create_new_deal.py](./TC003_post_create_new_deal.py)
 - **Test Error:** Traceback (most recent call last):
-  File "/var/lang/lib/python3.12/site-packages/requests/models.py", line 974, in json
-    return complexjson.loads(self.text, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/var/lang/lib/python3.12/site-packages/simplejson/__init__.py", line 514, in loads
-    return _default_decoder.decode(s)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/var/lang/lib/python3.12/site-packages/simplejson/decoder.py", line 386, in decode
-    obj, end = self.raw_decode(s)
-               ^^^^^^^^^^^^^^^^^^
-  File "/var/lang/lib/python3.12/site-packages/simplejson/decoder.py", line 416, in raw_decode
-    return self.scan_once(s, idx=_w(s, idx).end())
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-simplejson.errors.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
-
-During handling of the above exception, another exception occurred:
-
-Traceback (most recent call last):
-  File "<string>", line 24, in test_get_deal_full_details_database_error
-  File "/var/lang/lib/python3.12/site-packages/requests/models.py", line 978, in json
-    raise RequestsJSONDecodeError(e.msg, e.doc, e.pos)
-requests.exceptions.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
-
-During handling of the above exception, another exception occurred:
-
-Traceback (most recent call last):
   File "/var/task/handler.py", line 258, in run_with_retry
     exec(code, exec_env)
   File "<string>", line 40, in <module>
-  File "<string>", line 26, in test_get_deal_full_details_database_error
-AssertionError: Response is not valid JSON
+  File "<string>", line 20, in test_post_create_new_deal
+AssertionError: Unexpected status code: 409, Response: {"detail":"Aquest municipi ja té un deal associat"}
 
-- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/9728b68d-f67c-4e90-91b0-b1b34b9f6d3b/4055604f-019b-4386-b3c7-af66ea73e984
+- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/de31328d-a86e-479d-ae77-02ad66598657/cc6514fa-7764-4d4b-9674-5afee1ee38ae
 - **Status:** ❌ Failed
 - **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
 ---
 
-#### Test TC005 get_calendar_events_success
-- **Test Code:** [TC005_get_calendar_events_success.py](./TC005_get_calendar_events_success.py)
+#### Test TC004 get_deal_full_360_view
+- **Test Code:** [TC004_get_deal_full_360_view.py](./TC004_get_deal_full_360_view.py)
 - **Test Error:** Traceback (most recent call last):
   File "/var/task/handler.py", line 258, in run_with_retry
     exec(code, exec_env)
-  File "<string>", line 28, in <module>
-  File "<string>", line 14, in test_get_calendar_events_success
-AssertionError: Expected status code 200, got 500
+  File "<string>", line 79, in <module>
+  File "<string>", line 40, in test_get_deal_full_360_view
+AssertionError: Failed to create deal, status code: 409, body: {"detail":"Aquest municipi ja té un deal associat"}
 
-- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/9728b68d-f67c-4e90-91b0-b1b34b9f6d3b/791a3c57-49b1-4679-9593-0a8fb0c8b221
+- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/de31328d-a86e-479d-ae77-02ad66598657/3a0cbf82-e577-401e-8d8a-e5ba9d9c9b89
 - **Status:** ❌ Failed
 - **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
 ---
 
-#### Test TC006 get_calendar_events_invalid_parameters
-- **Test Code:** [TC006_get_calendar_events_invalid_parameters.py](./TC006_get_calendar_events_invalid_parameters.py)
-- **Test Error:** Traceback (most recent call last):
-  File "/var/task/handler.py", line 258, in run_with_retry
-    exec(code, exec_env)
-  File "<string>", line 44, in <module>
-  File "<string>", line 12, in test_get_calendar_events_invalid_parameters
-AssertionError: Expected 400 Bad Request when missing start/end parameters
-
-- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/9728b68d-f67c-4e90-91b0-b1b34b9f6d3b/c6c862cb-c6b1-4bc8-8ea7-d5b69041bb33
-- **Status:** ❌ Failed
-- **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
----
-
-#### Test TC007 get_calendar_events_data_store_unreachable
-- **Test Code:** [TC007_get_calendar_events_data_store_unreachable.py](./TC007_get_calendar_events_data_store_unreachable.py)
-- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/9728b68d-f67c-4e90-91b0-b1b34b9f6d3b/795afe4f-7eb7-4b40-ad9d-3f0da4818f7a
+#### Test TC005 get_contactes_list
+- **Test Code:** [TC005_get_contactes_list.py](./TC005_get_contactes_list.py)
+- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/de31328d-a86e-479d-ae77-02ad66598657/05bc858f-46c6-4dcc-b2e2-5be140bd5380
 - **Status:** ✅ Passed
 - **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
 ---
 
-#### Test TC008 get_kanban_deals_success
-- **Test Code:** [TC008_get_kanban_deals_success.py](./TC008_get_kanban_deals_success.py)
+#### Test TC006 post_create_new_contacte
+- **Test Code:** [TC006_post_create_new_contacte.py](./TC006_post_create_new_contacte.py)
 - **Test Error:** Traceback (most recent call last):
   File "/var/task/handler.py", line 258, in run_with_retry
     exec(code, exec_env)
-  File "<string>", line 69, in <module>
-  File "<string>", line 14, in test_get_kanban_deals_success
-AssertionError: Expected status code 200, got 500
+  File "<string>", line 58, in <module>
+  File "<string>", line 37, in test_post_create_new_contacte
+AssertionError: POST /contactes failed with status 500
 
-- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/9728b68d-f67c-4e90-91b0-b1b34b9f6d3b/554b8c0d-c981-4fa9-89df-340732fbc35a
+- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/de31328d-a86e-479d-ae77-02ad66598657/9a445bfd-dbb8-46a3-b826-a6a9035ebc26
 - **Status:** ❌ Failed
 - **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
 ---
 
-#### Test TC009 get_kanban_deals_empty
-- **Test Code:** [TC009_get_kanban_deals_empty.py](./TC009_get_kanban_deals_empty.py)
+#### Test TC007 get_municipis_list
+- **Test Code:** [TC007_get_municipis_list.py](./TC007_get_municipis_list.py)
+- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/de31328d-a86e-479d-ae77-02ad66598657/5ba92732-7b76-4cdd-82c6-0ef8f00a2601
+- **Status:** ✅ Passed
+- **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
+---
+
+#### Test TC008 get_calendar_events
+- **Test Code:** [TC008_get_calendar_events.py](./TC008_get_calendar_events.py)
+- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/de31328d-a86e-479d-ae77-02ad66598657/ad558849-1dbd-423a-89ca-1a03365a5724
+- **Status:** ✅ Passed
+- **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
+---
+
+#### Test TC009 post_create_new_interaccio
+- **Test Code:** [TC009_post_create_new_interaccio.py](./TC009_post_create_new_interaccio.py)
 - **Test Error:** Traceback (most recent call last):
-  File "<string>", line 16, in test_get_kanban_deals_empty
-  File "/var/lang/lib/python3.12/site-packages/requests/models.py", line 1024, in raise_for_status
-    raise HTTPError(http_error_msg, response=self)
-requests.exceptions.HTTPError: 500 Server Error: Internal Server Error for url: http://localhost:8000/deals/kanban
-
-During handling of the above exception, another exception occurred:
-
-Traceback (most recent call last):
   File "/var/task/handler.py", line 258, in run_with_retry
     exec(code, exec_env)
-  File "<string>", line 66, in <module>
-  File "<string>", line 18, in test_get_kanban_deals_empty
-AssertionError: GET /deals/kanban request failed: 500 Server Error: Internal Server Error for url: http://localhost:8000/deals/kanban
+  File "<string>", line 63, in <module>
+  File "<string>", line 22, in test_post_create_new_interaccio
+AssertionError: Expected 200 for deal creation, got 409
 
-- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/9728b68d-f67c-4e90-91b0-b1b34b9f6d3b/e010835f-bf8c-4aa2-b303-723264f4adf3
+- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/de31328d-a86e-479d-ae77-02ad66598657/13afcb62-01eb-420b-8b3d-5cb19eb77cdc
 - **Status:** ❌ Failed
 - **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
 ---
 
-#### Test TC010 get_kanban_deals_database_timeout
-- **Test Code:** [TC010_get_kanban_deals_database_timeout.py](./TC010_get_kanban_deals_database_timeout.py)
+#### Test TC010 post_ask_ai_agent_about_deal
+- **Test Code:** [TC010_post_ask_ai_agent_about_deal.py](./TC010_post_ask_ai_agent_about_deal.py)
 - **Test Error:** Traceback (most recent call last):
   File "/var/task/handler.py", line 258, in run_with_retry
     exec(code, exec_env)
-  File "<string>", line 57, in <module>
-  File "<string>", line 14, in test_get_kanban_deals_database_timeout
-AssertionError: Expected 503, got 500
+  File "<string>", line 62, in <module>
+  File "<string>", line 39, in test_post_ask_ai_agent_about_deal
+AssertionError: AI agent ask failed: {"detail":[{"type":"string_type","loc":["body","query"],"msg":"Input should be a valid string","input":{"question":"Summarize the current status and recommended next steps."}}]}
 
-- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/9728b68d-f67c-4e90-91b0-b1b34b9f6d3b/0e278e7d-c3a2-4f45-8528-49e25c059f74
+- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/de31328d-a86e-479d-ae77-02ad66598657/9da7b768-9462-4414-a015-f96346b62c46
 - **Status:** ❌ Failed
 - **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
 ---
@@ -182,7 +120,7 @@ AssertionError: Expected 503, got 500
 
 ## 3️⃣ Coverage & Matching Metrics
 
-- **20.00** of tests passed
+- **50.00** of tests passed
 
 | Requirement        | Total Tests | ✅ Passed | ❌ Failed  |
 |--------------------|-------------|-----------|------------|

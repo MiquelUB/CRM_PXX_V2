@@ -2,10 +2,10 @@ import os
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 from sqlmodel import SQLModel
-from models import Municipi, Deal, Contacte, Interaccio, Esdeveniment
+from models import Municipi, Deal, Contacte, Interaccio
 
 # DATABASE_URL hauria de venir de les variables d'entorn d'EasyPanel
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+asyncpg://user:password@localhost/crm_pxx_v2")
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./crm_pxx_v2.db")
 
 # Creació del motor asíncron per a PostgreSQL
 engine = create_async_engine(DATABASE_URL, echo=True, future=True)

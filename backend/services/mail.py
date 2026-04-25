@@ -36,26 +36,43 @@ async def resoldre_contacte_id(session: AsyncSession, remitent_brut: str) -> int
     return result.scalar_one_or_none()
 
 async def upsert_email_to_interaction(session: AsyncSession, deal_id: int, email_data: dict):
-    """UPSERT atòmic a PostgreSQL amb resolució de contacte sanititzada."""
-    # 1. Resolem el contacte de forma segura
-    contacte_id = await resoldre_contacte_id(session, email_data['from'])
-
-    # 2. Generem el hash per a la idempotència
+    """UPSERT idempotent utilitzant metadata_json per a la traçabilitat."""
+    # 1. Generem el hash per a la idempotència
     email_hash = generate_email_hash(
         email_data['message_id'], email_data['from'], email_data['date'], email_data['subject']
     )
 
-    # 3. Executem l'UPSERT (específic de PostgreSQL)
-    stmt = insert(Interaccio).values(
-        tipus="EMAIL",
+    # 2. Busquem si ja existeix una interacció amb aquest hash a metadata_json
+    # Nota: Com que SQLite/Postgres JSON pot ser complex de buscar directament en SQLModel simple,
+    # fem una cerca per tipus i deal i filtrem, o usem una query nativa.
+    # Per simplicitat i compatibilitat asíncrona:
+    statement = select(Interaccio).where(
+        Interaccio.deal_id == deal_id,
+        Interaccio.tipus == "email_in"
+    )
+    result = await session.execute(statement)
+    existing_interaccions = result.scalars().all()
+    
+    for inter in existing_interaccions:
+        if inter.metadata_json and inter.metadata_json.get("email_hash") == email_hash:
+            logger.debug(f"Email {email_hash} ja registrat. Ignorant.")
+            return
+
+    # 3. Creem la nova interacció
+    nova_inter = Interaccio(
+        deal_id=deal_id,
+        tipus="email_in",
         contingut=email_data['body'],
         data_creacio=email_data['date'].astimezone(timezone.utc),
-        external_id=email_hash,
-        deal_id=deal_id,
-        contacte_id=contacte_id # Si és None, es guarda com a null (correcte)
-    ).on_conflict_do_nothing(index_elements=['external_id'])
+        metadata_json={
+            "email_hash": email_hash,
+            "message_id": email_data['message_id'],
+            "from": email_data['from'],
+            "subject": email_data['subject']
+        }
+    )
     
-    await session.execute(stmt)
+    session.add(nova_inter)
     await session.commit()
 
 async def run_mail_sync(session: AsyncSession, deal_id: int, config: dict):

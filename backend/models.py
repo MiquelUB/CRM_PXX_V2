@@ -1,72 +1,83 @@
-from enum import Enum
 from sqlmodel import SQLModel, Field, Relationship
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from datetime import datetime
+from enum import Enum
+from sqlalchemy import Column, JSON
+from pydantic import BaseModel, EmailStr
 
-class TipusPlaSaaS(str, Enum):
-    ROURE = "roure"
-    MIRADOR = "mirador"
-    TERRITORI = "territori"
+# --- ENUMS DE NEGOCI ---
+class EstatDeal(str, Enum):
+    NOU = "Nou"
+    CONTACTAT = "Contactat"
+    DEMO = "Demo"
+    PROPOSTA = "Proposta"
+    TANCAT = "Tancat"
 
-class Contacte(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
-    nom: str
-    carrec: Optional[str] = None 
-    telefon: Optional[str] = None
-    email: str = Field(index=True)
-    municipi_id: str = Field(foreign_key="municipi.codi_ine")
-    
-    # Relacions
-    municipi: "Municipi" = Relationship(back_populates="contactes")
-    interaccions: List["Interaccio"] = Relationship(back_populates="contacte")
-
-class Interaccio(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
-    deal_id: int = Field(foreign_key="deal.id")
-    contacte_id: Optional[int] = Field(default=None, foreign_key="contacte.id")
-    tipus: str # 'EMAIL', 'NOTA_MANUAL', 'SISTEMA'
-    contingut: str
-    data_creacio: datetime = Field(default_factory=datetime.utcnow)
-    external_id: Optional[str] = Field(default=None, unique=True, index=True)
-    
-    # Relacions
-    deal: "Deal" = Relationship(back_populates="interaccions")
-    contacte: Optional["Contacte"] = Relationship(back_populates="interaccions")
-
-class Esdeveniment(SQLModel, table=True):
-    """Necessari per al Function Calling de l'Agent IA"""
-    id: Optional[int] = Field(default=None, primary_key=True)
-    deal_id: int = Field(foreign_key="deal.id")
-    titol: str
-    data_hora: datetime
-    creat_per_ia: bool = Field(default=False)
-    
-    # Relacions
-    deal: "Deal" = Relationship(back_populates="esdeveniments")
-
-class Deal(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
-    municipi_id: str = Field(foreign_key="municipi.codi_ine", unique=True) # 1:1 Restricció
-    estat: str = Field(default="Obert")
-    
-    # Financeres / SaaS Plan
-    pla_tipus: Optional[TipusPlaSaaS] = None
-    preu_acordat: Optional[float] = None
-    
-    # Relacions
-    municipi: "Municipi" = Relationship(back_populates="deals")
-    interaccions: List["Interaccio"] = Relationship(back_populates="deal")
-    esdeveniments: List["Esdeveniment"] = Relationship(back_populates="deal")
+# --- MODELS DE BASE DE DADES (SQLModel) ---
 
 class Municipi(SQLModel, table=True):
-    codi_ine: str = Field(primary_key=True)
+    id: Optional[int] = Field(default=None, primary_key=True)
+    codi_ine: str = Field(unique=True, index=True)
     nom: str
-    provincia: Optional[str] = None
-    poblacio: Optional[int] = None
-    adreça: Optional[str] = None
+    adreca_fisica: Optional[str] = None
     email_general: Optional[str] = None
     telefon_general: Optional[str] = None
     
     # Relacions
-    deals: List["Deal"] = Relationship(back_populates="municipi")
     contactes: List["Contacte"] = Relationship(back_populates="municipi")
+    deal: Optional["Deal"] = Relationship(back_populates="municipi")
+
+class Contacte(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    municipi_id: int = Field(foreign_key="municipi.id")
+    nom: str
+    carrec: Optional[str] = None
+    email: str = Field(index=True)
+    telefon: Optional[str] = None
+    
+    # Relacions
+    municipi: Municipi = Relationship(back_populates="contactes")
+
+class Deal(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    municipi_id: int = Field(foreign_key="municipi.id", unique=True)
+    pla_assignat: str 
+    estat_kanban: EstatDeal = Field(default=EstatDeal.NOU)
+    is_active: bool = Field(default=True) # Soft Delete
+    
+    # Relacions
+    municipi: Municipi = Relationship(back_populates="deal")
+    interaccions: List["Interaccio"] = Relationship(back_populates="deal")
+
+class Interaccio(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    deal_id: int = Field(foreign_key="deal.id", index=True)
+    tipus: str = Field(index=True) # nota, email_in, email_out, calendar, ai_prompt, ai_response, system_log
+    contingut: str
+    # JSON real a DB utilitzant sa_column de SQLAlchemy
+    metadata_json: Optional[Dict[str, Any]] = Field(default=None, sa_column=Column(JSON))
+    data_creacio: datetime = Field(default_factory=datetime.utcnow)
+    
+    # Relacions
+    deal: Deal = Relationship(back_populates="interaccions")
+
+# --- ESQUEMES DE VALIDACIÓ (Pydantic per a l'API) ---
+
+class ContacteSchema(BaseModel):
+    nom: str
+    carrec: Optional[str] = None
+    email: EmailStr
+    telefon: Optional[str] = None
+
+class MunicipiSchema(BaseModel):
+    codi_ine: str
+    nom: str
+    adreca_fisica: Optional[str] = None
+    email_general: Optional[str] = None # Canviat a str per flexibilitat si cal, però validat com a email al frontend
+    telefon_general: Optional[str] = None
+
+class OnboardingRequest(BaseModel):
+    municipi: MunicipiSchema
+    contactes: List[ContacteSchema]
+    pla_assignat: str = "Pla Basic"
+

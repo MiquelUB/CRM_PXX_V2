@@ -13,7 +13,7 @@ interface DealSnippet {
     nom: string;
     contactes?: { nom: string }[];
   };
-  plan_nom?: string;
+  pla_tipus?: string;
 }
 
 interface KanbanData {
@@ -71,12 +71,13 @@ const KanbanBoard: React.FC = () => {
   };
 
   const getPlanBadge = (plan?: string) => {
+    const p = plan?.toLowerCase();
     const colors: any = {
-      'Territori': 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400',
-      'Mirador': 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-400',
-      'Roure': 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400',
+      'territori': 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400',
+      'mirador': 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-400',
+      'roure': 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400',
     };
-    return colors[plan || 'Roure'] || colors['Roure'];
+    return colors[p || 'roure'] || colors['roure'];
   };
 
   if (!data) return <div className="h-64 flex items-center justify-center">Carregant Pipeline...</div>;
@@ -102,7 +103,7 @@ const KanbanBoard: React.FC = () => {
                     snapshot.isDraggingOver ? 'bg-indigo-50/50 dark:bg-indigo-900/10' : 'bg-slate-100/50 dark:bg-slate-950/50'
                   }`}
                 >
-                  {data[colId]?.map((deal, index) => (
+                  {Array.isArray(data[colId]) && data[colId].map((deal, index) => (
                     <Draggable key={deal.id.toString()} draggableId={deal.id.toString()} index={index}>
                       {(provided, snapshot) => (
                         <div
@@ -115,8 +116,8 @@ const KanbanBoard: React.FC = () => {
                           }`}
                         >
                           <div className="flex justify-between items-start mb-2">
-                            <span className={`text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-tighter ${getPlanBadge(deal.plan_nom)}`}>
-                              {deal.plan_nom || 'Roure'}
+                            <span className={`text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-tighter ${getPlanBadge(deal.pla_tipus)}`}>
+                              {deal.pla_tipus || 'Roure'}
                             </span>
                           </div>
                           

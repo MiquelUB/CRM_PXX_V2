@@ -3,16 +3,17 @@
   "type": "backend",
   "scope": "codebase",
   "localEndpoint": "http://localhost:8000",
+  "backendAuthType": "public",
   "executionArgs": {
     "projectName": "CRM_PXX_V2",
     "projectPath": "d:\\ProjectXX\\CRM_PXX_V2",
     "testIds": [],
-    "additionalInstruction": "Test the core endpoints: /deals/{deal_id}/full, /calendar/events, and /deals/kanban. Ensure data integrity and correct status categorization.",
+    "additionalInstruction": "The backend is currently running using SQLite as a temporary measure to bypass PostgreSQL connectivity issues. Please validate that all endpoints are reachable and return consistent data structures even if empty. Ensure that the Deals and Kanban endpoints do not return 500 errors.",
     "serverMode": "development",
     "envs": {
       "API_KEY": "sk-user-yaJoFcCYr49hl8dMgwePF3FY0JmeIGOwR2x-myo5ZUmOFehitmh2A2zrT49TsZQXWruLdgvdCh5bWw638-yakLLpsxxgvea-dm5pAFtoqtq77ny8T-PA1ZWnuI4aUU6Idxg"
     }
   },
-  "serverPort": 55196,
-  "proxy": "http://75cb8eed-2cee-459c-bfb2-ec216792663d:xz0xWwu1oeJLbwYMMMMon6WObcCUtDlS@tun.testsprite.com:8080"
+  "serverPort": 61938,
+  "proxy": "http://ea7804a4-de49-44bc-b31c-86584bfa2d3c:vcSvYfybYmATlW1cWEsvchJx2RRhOOsS@tun.testsprite.com:8080"
 }

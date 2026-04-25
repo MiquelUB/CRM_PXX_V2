@@ -3,46 +3,97 @@ type: backend
 tech_stack:
   - Python
   - FastAPI
-  - SQLModel
-  - PostgreSQL
-  - Alembic
-  - Uvicorn
-routes:
-  - path: /deals/{deal_id}/full
-    file: backend/main.py
-    method: GET
-    description: Get full details for a specific deal including municipality, contacts, and interactions.
-  - path: /calendar/events
-    file: backend/main.py
-    method: GET
-    description: Get calendar events derived from interaction history.
-  - path: /deals/kanban
-    file: backend/main.py
-    method: GET
-    description: Get the state of the Kanban board organized by deal status.
+  - SQLModel (SQLAlchemy)
+  - SQLite (aiosqlite) for local / PostgreSQL for prod
+  - Pydantic
 features:
-  - name: Deal Intelligence
-    description: Comprehensive retrieval of deal data for the "Epicentre" view.
+  - name: Health Check
+    description: Verify API operational status
     files:
-      - backend/main.py
-      - backend/models.py
-    api_calls:
+      - main.py
+    endpoints:
       - method: GET
-        endpoint: /deals/{deal_id}/full
-  - name: Native Calendar
-    description: Unified timeline and calendar feed derived from interactions.
+        path: /health
+        description: Returns API health status
+        auth_required: false
+        response_schema:
+          "200": "{status: string, version: string, timestamp: string}"
+  - name: Deal Management
+    description: CRUD operations for sales deals (projects)
     files:
-      - backend/main.py
-      - backend/models.py
-    api_calls:
+      - main.py
+      - models.py
+    endpoints:
       - method: GET
-        endpoint: /calendar/events
-  - name: Kanban Dashboard
-    description: High-performance data retrieval for the Kanban board with status categorization.
+        path: /deals/kanban
+        description: List deals formatted for Kanban board
+        auth_required: false
+        response_schema:
+          "200": "object (columns mapping to deal lists)"
+      - method: POST
+        path: /deals
+        description: Create a new deal
+        auth_required: false
+        request_schema:
+          body:
+            municipi_id: string
+            estat: string
+            pla_tipus: string
+            preu_acordat: number
+        response_schema:
+          "200": Deal
+      - method: GET
+        path: /deals/{deal_id}/full
+        description: Get full 360 view of a deal
+        auth_required: false
+        response_schema:
+          "200": object
+  - name: Contacts Management
+    description: Manage municipality contacts
     files:
-      - backend/main.py
-      - backend/models.py
-    api_calls:
+      - main.py
+      - models.py
+    endpoints:
       - method: GET
-        endpoint: /deals/kanban
+        path: /contactes
+        description: List all contacts
+        auth_required: false
+      - method: POST
+        path: /contactes
+        description: Create a contact
+        auth_required: false
+  - name: Municipalities Management
+    description: Information about towns and cities
+    files:
+      - main.py
+      - models.py
+    endpoints:
+      - method: GET
+        path: /municipis
+        description: List all municipalities
+        auth_required: false
+  - name: Calendar & Timeline
+    description: Activity tracking and scheduling
+    files:
+      - main.py
+      - models.py
+    endpoints:
+      - method: GET
+        path: /calendar/events
+        description: Get events for react-big-calendar
+        auth_required: false
+      - method: POST
+        path: /interaccions
+        description: Log a new interaction
+        auth_required: false
+  - name: AI Agent
+    description: Chat interface for deals analysis
+    files:
+      - main.py
+      - services/ai_agent.py
+    endpoints:
+      - method: POST
+        path: /agent/deals/{deal_id}/ask
+        description: Ask Kimi AI about a specific deal
+        auth_required: false
 known_limitations: []
