@@ -129,6 +129,7 @@ class InteraccioCreate(BaseModel):
 @app.get("/deals/kanban", response_model=List[DealReadWithMunicipi])
 async def get_kanban_deals(session: AsyncSession = Depends(get_session)):
     """Obté els deals actius per al Kanban."""
+    print("Cridant Kanban...")
     statement = select(Deal).where(Deal.is_active == True).options(
         joinedload(Deal.municipi),
         selectinload(Deal.contactes)
