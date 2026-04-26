@@ -25,10 +25,13 @@ const ContactsModule: React.FC = () => {
       const payload = {
         nom: formData.nom,
         email: formData.email,
-        telefon: formData.telefon,
-        carrec: formData.carrec,
-        municipi_id: deal.municipi.id
+        telefon: formData.telefon || null,
+        carrec: formData.carrec || null,
+        municipi_id: Number(deal.municipi.id),
+        deal_id: deal.id
       };
+
+      console.log('Payload contacte:', payload);
 
       const response = await fetch(`${API_BASE}/contactes`, {
         method: 'POST',
