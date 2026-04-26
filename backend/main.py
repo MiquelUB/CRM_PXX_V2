@@ -4,14 +4,21 @@ from fastapi.responses import JSONResponse
 from starlette.requests import Request
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
+from sqlalchemy import text
 from sqlalchemy.orm import selectinload, joinedload
 from database import get_session, engine
-from models import Deal, Municipi, Interaccio, Contacte, EstatDeal, OnboardingRequest
+from models import (
+    Deal, Municipi, Interaccio, Contacte, EstatDeal, OnboardingRequest,
+    MunicipiRead, DealRead, ContacteRead, InteraccioRead,
+    MunicipiReadWithDeals, DealReadWithMunicipi, InteraccioReadWithContext
+)
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel
 from services.ai_agent import ask_kimi_k2
 import traceback
 import logging
+import uuid
+import os
 from datetime import datetime
 from fastapi import APIRouter
 
@@ -30,13 +37,37 @@ app = FastAPI(
 )
 
 # --- CONFIGURACIÓ CORS ---
+frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=False,
+    allow_origins=[frontend_url],
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# --- MIDDLEWARE D'OBSERVABILITAT ---
+@app.middleware("http")
+async def add_request_id_and_logging(request: Request, call_next):
+    request_id = str(uuid.uuid4())
+    request.state.request_id = request_id
+    
+    # Configurem el logger per a aquesta petició
+    logger = logging.getLogger("uvicorn.error")
+    
+    try:
+        response = await call_next(request)
+        response.headers["X-Request-ID"] = request_id
+        return response
+    except Exception as exc:
+        logger.error(f"Error [ID:{request_id}] a {request.method} {request.url.path}: {str(exc)}", exc_info=True)
+        return JSONResponse(
+            status_code=500,
+            content={
+                "detail": "Error intern del servidor",
+                "request_id": request_id
+            }
+        )
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
@@ -57,8 +88,17 @@ async def global_exception_handler(request: Request, exc: Exception):
     )
 
 @app.get("/health")
-async def health_check():
-    return {"status": "ok", "version": "2.1.2", "timestamp": datetime.utcnow().isoformat()}
+async def health_check(session: AsyncSession = Depends(get_session)):
+    """Healthcheck robust per a Easypanel."""
+    try:
+        await session.execute(text("SELECT 1"))
+        return {"status": "ok", "database": "connected", "timestamp": datetime.utcnow().isoformat()}
+    except Exception as e:
+        logging.error(f"Healthcheck failed: {e}")
+        return JSONResponse(
+            status_code=503,
+            content={"status": "error", "database": "disconnected"}
+        )
 
 # --- ESQUEMES DE VALIDACIÓ (API) ---
 
@@ -86,50 +126,22 @@ class InteraccioCreate(BaseModel):
 
 # --- DEALS (PROJECTES) ---
 
-@app.get("/deals/kanban")
+@app.get("/deals/kanban", response_model=List[DealReadWithMunicipi])
 async def get_kanban_deals(session: AsyncSession = Depends(get_session)):
-    """Obté els deals actius estructurats per a les columnes del Kanban."""
-    try:
-        # Utilitzem selectinload per evitar errors de lazy loading asíncron
-        statement = select(Deal).where(Deal.is_active == True).options(
-            selectinload(Deal.municipi).selectinload(Municipi.contactes),
-            selectinload(Deal.interaccions)
-        )
-        result = await session.execute(statement)
-        deals = result.scalars().all()
-        
-        # Inicialitzem el board amb els estats de l'Enum
-        board = {e.value.lower(): [] for e in EstatDeal}
-        
-        for d in deals:
-            try:
-                deal_dict = d.dict(exclude={"municipi", "interaccions"})
-                
-                estat_clau = d.estat_kanban.value.lower() if d.estat_kanban else "nou"
-                
-                deal_dict["titol"] = d.municipi.nom if d.municipi else "Projecte sense nom"
-                deal_dict["municipi"] = d.municipi.dict(exclude={"deal", "contactes"}) if d.municipi else None
-                
-                if d.municipi and d.municipi.contactes:
-                    deal_dict["municipi"]["contactes"] = [c.dict(exclude={"municipi"}) for c in d.municipi.contactes]
-                    
-                if estat_clau in board:
-                    board[estat_clau].append(deal_dict)
-                else:
-                    board["nou"].append(deal_dict)
-            except Exception as e:
-                logging.warning(f"Error processant deal {d.id} per al Kanban: {e}")
-                continue
-        return board
-    except Exception as e:
-        logging.error(f"Error crític a /deals/kanban: {str(e)}")
-        raise HTTPException(status_code=500, detail="Error intern carregant el Kanban")
+    """Obté els deals actius per al Kanban."""
+    statement = select(Deal).where(Deal.is_active == True).options(
+        joinedload(Deal.municipi),
+        selectinload(Deal.contactes)
+    )
+    result = await session.execute(statement)
+    return result.scalars().all()
 
-@app.get("/deals/{deal_id}")
+@app.get("/deals/{deal_id}", response_model=DealReadWithMunicipi)
 async def get_deal_full(deal_id: int, session: AsyncSession = Depends(get_session)):
     """Retorna tota la informació d'un deal ( Epicentre )."""
     statement = select(Deal).where(Deal.id == deal_id).options(
-        selectinload(Deal.municipi).selectinload(Municipi.contactes),
+        joinedload(Deal.municipi),
+        selectinload(Deal.contactes),
         selectinload(Deal.interaccions)
     )
     result = await session.execute(statement)
@@ -138,21 +150,12 @@ async def get_deal_full(deal_id: int, session: AsyncSession = Depends(get_sessio
     if not deal:
         raise HTTPException(status_code=404, detail="Deal no trobat")
     
-    res = deal.dict()
-    res["titol"] = deal.municipi.nom if deal.municipi else "Projecte sense nom"
-    res["municipi"] = deal.municipi.dict() if deal.municipi else None
-    if deal.municipi and deal.municipi.contactes:
-        res["municipi"]["contactes"] = [c.dict() for c in deal.municipi.contactes]
-        
-    # Ordenació cronològica de la bitàcorra (Timeline)
-    res["interaccions"] = sorted(deal.interaccions, key=lambda x: x.data, reverse=True)
-    
-    return res
+    return deal
 
-@app.get("/deals")
-async def get_deals(session=Depends(get_session)):
-    """Llistat de tots els deals amb el seu municipi associat."""
-    statement = select(Deal).options(joinedload(Deal.municipi))
+@app.get("/deals", response_model=List[DealReadWithMunicipi])
+async def get_deals(limit: int = 50, offset: int = 0, session=Depends(get_session)):
+    """Llistat de tots els deals amb paginació."""
+    statement = select(Deal).options(joinedload(Deal.municipi)).limit(limit).offset(offset)
     result = await session.execute(statement)
     return result.scalars().all()
 
@@ -218,12 +221,7 @@ async def full_onboarding(request: OnboardingRequest, session=Depends(get_sessio
         logging.error(f"Error en onboarding: {str(e)}")
         raise HTTPException(status_code=500, detail="Error intern en el procés d'onboarding")
 
-@app.get("/calendar/events/raw")
-async def get_calendar_events_raw(session=Depends(get_session)):
-    """Retorna els esdeveniments en format brut (models)."""
-    statement = select(Esdeveniment).options(joinedload(Esdeveniment.deal).joinedload(Deal.municipi))
-    result = await session.execute(statement)
-    return result.scalars().all()
+# (Esborrat endpoint /calendar/events/raw per obsolescència i error de model)
 
 @app.patch("/deals/{deal_id}/estat")
 async def update_deal_estat(deal_id: int, request: DealStatusUpdate, session: AsyncSession = Depends(get_session)):
@@ -267,10 +265,10 @@ async def update_deal_saas(deal_id: int, request: DealSaaSUpdate, session: Async
 
 # --- CONTACTES ---
 
-@app.get("/contactes")
-async def get_contactes(limit: int = 100, offset: int = 0, session=Depends(get_session)):
-    """Llistat de contactes amb paginació per evitar OOM."""
-    statement = select(Contacte).options(selectinload(Contacte.municipi)).limit(limit).offset(offset)
+@app.get("/contactes", response_model=List[ContacteRead])
+async def get_contactes(limit: int = 50, offset: int = 0, session=Depends(get_session)):
+    """Llistat de contactes amb paginació."""
+    statement = select(Contacte).limit(limit).offset(offset)
     result = await session.execute(statement)
     return result.scalars().all()
 
@@ -323,9 +321,9 @@ async def delete_contacte(contact_id: int, session=Depends(get_session)):
 
 # --- MUNICIPIS ---
 
-@app.get("/municipis")
-async def get_municipis(limit: int = 100, offset: int = 0, session=Depends(get_session)):
-    """Llistat de municipis amb deals carregats per evitar LazyLoading Error."""
+@app.get("/municipis", response_model=List[MunicipiReadWithDeals])
+async def get_municipis(limit: int = 50, offset: int = 0, session=Depends(get_session)):
+    """Llistat de municipis amb deals carregats."""
     statement = select(Municipi).options(selectinload(Municipi.deals)).limit(limit).offset(offset)
     result = await session.execute(statement)
     return result.scalars().all()
@@ -376,12 +374,13 @@ async def create_interaccio(data: InteraccioCreate, session: AsyncSession = Depe
     await session.refresh(nou)
     return nou
 
-@app.get("/emails")
+@app.get("/emails", response_model=List[InteraccioReadWithContext])
 async def get_emails(limit: int = 50, offset: int = 0, session=Depends(get_session)):
-    """Llistat d'emails amb paginació."""
+    """Llistat d'emails amb context carregat."""
     statement = (
         select(Interaccio)
         .where(Interaccio.tipus == "EMAIL")
+        .options(joinedload(Interaccio.deal).joinedload(Deal.municipi))
         .order_by(Interaccio.data.desc())
         .limit(limit)
         .offset(offset)
@@ -391,7 +390,7 @@ async def get_emails(limit: int = 50, offset: int = 0, session=Depends(get_sessi
 
 # --- CALENDARI (ESDEVENIMENTS) ---
 
-@app.get("/calendar/events")
+@app.get("/calendar/events", response_model=List[dict])
 async def get_calendar_events_formatted(session=Depends(get_session)):
     """Retorna els esdeveniments formatats des de la bitàcola centralitzada."""
     statement = (

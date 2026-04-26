@@ -76,6 +76,55 @@ class Interaccio(SQLModel, table=True):
 
 # --- ESQUEMES DE VALIDACIÓ (Pydantic per a l'API) ---
 
+class ContacteRead(BaseModel):
+    id: int
+    nom: str
+    carrec: Optional[str] = None
+    email: str
+    telefon: Optional[str] = None
+    municipi_id: int
+    deal_id: Optional[int] = None
+
+class MunicipiRead(BaseModel):
+    id: int
+    codi_ine: str
+    nom: str
+    provincia: Optional[str] = None
+    poblacio: Optional[int] = None
+    adreca_fisica: Optional[str] = None
+    email_general: Optional[str] = None
+    telefon_general: Optional[str] = None
+
+class DealRead(BaseModel):
+    id: int
+    municipi_id: int
+    pla_assignat: str
+    pla_saas: str
+    estat_kanban: EstatDeal
+    is_active: bool
+    data_creacio: datetime
+
+class InteraccioRead(BaseModel):
+    id: int
+    deal_id: int
+    tipus: str
+    contingut: str
+    metadata_json: Optional[Dict[str, Any]] = None
+    data: datetime
+
+# --- ESQUEMES COMPOSTOS (Per a relacions carregades) ---
+
+class MunicipiReadWithDeals(MunicipiRead):
+    deals: List[DealRead] = []
+
+class DealReadWithMunicipi(DealRead):
+    municipi: Optional[MunicipiRead] = None
+    contactes: List[ContacteRead] = []
+    interaccions: List[InteraccioRead] = []
+
+class InteraccioReadWithContext(InteraccioRead):
+    deal: Optional[DealReadWithMunicipi] = None
+
 class ContacteSchema(BaseModel):
     nom: str
     carrec: Optional[str] = None
