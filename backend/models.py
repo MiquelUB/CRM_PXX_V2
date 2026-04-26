@@ -98,10 +98,10 @@ class MunicipiRead(BaseModel):
 class DealRead(BaseModel):
     id: int
     municipi_id: int
-    pla_assignat: str
-    pla_saas: str
-    estat_kanban: EstatDeal
-    is_active: bool
+    pla_assignat: Optional[str] = "Pla de Venda"
+    pla_saas: Optional[str] = "Pla de Venda"
+    estat_kanban: Optional[EstatDeal] = EstatDeal.NOU
+    is_active: bool = True
     data_creacio: datetime
 
 class InteraccioRead(BaseModel):

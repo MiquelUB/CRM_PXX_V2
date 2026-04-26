@@ -135,7 +135,9 @@ async def get_kanban_deals(session: AsyncSession = Depends(get_session)):
         selectinload(Deal.contactes)
     )
     result = await session.execute(statement)
-    return result.scalars().all()
+    deals = result.scalars().all()
+    print(f"Deals trobats: {len(deals)}")
+    return deals
 
 @app.get("/deals/{deal_id}", response_model=DealReadWithMunicipi)
 async def get_deal_full(deal_id: int, session: AsyncSession = Depends(get_session)):
