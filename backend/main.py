@@ -7,7 +7,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlalchemy.orm import selectinload, joinedload
 from database import get_session, init_db, engine
 from models import Deal, Municipi, Interaccio, Contacte, EstatDeal, OnboardingRequest
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from pydantic import BaseModel
 from services.ai_agent import ask_kimi_k2
 import traceback
