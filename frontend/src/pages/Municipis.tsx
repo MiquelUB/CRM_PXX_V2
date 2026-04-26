@@ -16,8 +16,10 @@ const Municipis: React.FC = () => {
   const [formData, setFormData] = React.useState({ 
     nom: '', 
     codi_ine: '', 
+    provincia: '',
+    poblacio: '',
     adreca_fisica: '',
-    pla_assignat: 'Pla Basic' 
+    pla_assignat: 'Pla de Venda' 
   });
 
   const handleDelete = async (id: string) => {
@@ -34,10 +36,12 @@ const Municipis: React.FC = () => {
         municipi: {
           nom: formData.nom,
           codi_ine: formData.codi_ine,
+          provincia: formData.provincia,
+          poblacio: formData.poblacio ? parseInt(formData.poblacio) : null,
           adreca_fisica: formData.adreca_fisica
         },
         pla_assignat: formData.pla_assignat,
-        contactes: [] // Podríem afegir el primer contacte aquí en el futur
+        contactes: [] 
       };
 
       const response = await fetch(`${API_BASE}/deals/onboarding`, {
@@ -49,9 +53,8 @@ const Municipis: React.FC = () => {
       if (response.ok) {
         const result = await response.json();
         setIsModalOpen(false);
-        setFormData({ nom: '', codi_ine: '', adreca_fisica: '', pla_assignat: 'Pla Basic' });
+        setFormData({ nom: '', codi_ine: '', provincia: '', poblacio: '', adreca_fisica: '', pla_assignat: 'Pla de Venda' });
         mutate();
-        // Redirecció immediata al nou Deal per començar a treballar
         navigate(`/deals/${result.deal_id}`);
       } else {
         const error = await response.json();
@@ -80,7 +83,7 @@ const Municipis: React.FC = () => {
 
       {isModalOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 w-full max-w-lg shadow-2xl animate-in zoom-in-95 duration-200">
+          <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 w-full max-w-lg shadow-2xl animate-in zoom-in-95 duration-200 overflow-y-auto max-h-[90vh]">
             <div className="flex items-center gap-3 mb-6">
               <div className="p-3 bg-indigo-600 text-white rounded-2xl">
                 <ShieldCheck size={24} />
@@ -117,24 +120,44 @@ const Municipis: React.FC = () => {
                       className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
                     />
                   </div>
-                  <div className="bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-2xl border border-indigo-100 dark:border-indigo-800/50">
+                  <div>
+                    <label className="block text-[10px] font-black uppercase text-slate-400 mb-1.5 tracking-widest">Província</label>
+                    <input 
+                      type="text" 
+                      placeholder="Ex: Barcelona"
+                      value={formData.provincia}
+                      onChange={e => setFormData({...formData, provincia: e.target.value})}
+                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] font-black uppercase text-slate-400 mb-1.5 tracking-widest">Població (Habitants)</label>
+                    <input 
+                      type="number" 
+                      placeholder="Ex: 67000"
+                      value={formData.poblacio}
+                      onChange={e => setFormData({...formData, poblacio: e.target.value})}
+                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                    />
+                  </div>
+                  <div className="bg-indigo-50 dark:bg-indigo-900/20 p-3 rounded-2xl border border-indigo-100 dark:border-indigo-800/50">
                     <label className="block text-[10px] font-black uppercase text-indigo-900 dark:text-indigo-400 mb-1.5 tracking-widest">
-                      Pla SaaS a Assignar *
+                      Pla a Assignar *
                     </label>
                     <select 
                       required
                       value={formData.pla_assignat}
                       onChange={(e) => setFormData({...formData, pla_assignat: e.target.value})}
-                      className="w-full bg-white dark:bg-slate-900 border border-indigo-200 dark:border-indigo-800 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold text-indigo-600 shadow-sm"
+                      className="w-full bg-white dark:bg-slate-900 border border-indigo-200 dark:border-indigo-800 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold text-indigo-600 shadow-sm"
                     >
-                      <option value="Pla Basic">Pla Basic</option>
-                      <option value="Pla Pro">Pla Pro</option>
-                      <option value="Pla Premium">Pla Premium</option>
+                      <option value="Pla de Venda">Pla de Venda</option>
+                      <option value="Pla Roure">Pla Roure</option>
+                      <option value="Pla Territori">Pla Territori</option>
+                      <option value="Pla Mirador">Pla Mirador</option>
                     </select>
-                    <p className="mt-2 text-[9px] text-indigo-600 dark:text-indigo-400 italic font-medium flex items-center gap-1">
-                      <ShieldCheck size={10} />
-                      Això crearà automàticament el Deal al Kanban.
-                    </p>
                   </div>
                 </div>
 
@@ -204,10 +227,10 @@ const Municipis: React.FC = () => {
                 </td>
                 <td className="px-6 py-4">
                   <div className="flex justify-center gap-2">
-                    {/* Enllaç al Deal (Suposem que m.deals[0] existeix segons la lògica de 1 municipi = 1 deal) */}
-                    {m.deals?.[0]?.id ? (
+                    {/* Enllaç al Deal (Relació 1:1: 1 municipi = 1 deal) */}
+                    {m.deal?.id ? (
                       <Link 
-                        to={`/deals/${m.deals[0].id}`}
+                        to={`/deals/${m.deal.id}`}
                         className="p-2 text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-colors"
                         title="Veure Deal"
                       >

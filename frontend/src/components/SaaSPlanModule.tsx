@@ -77,9 +77,10 @@ const SaaSPlanModule: React.FC = () => {
               onChange={(e) => setPlanData({...planData, pla_assignat: e.target.value})}
               className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-800 rounded px-2 py-1 outline-none"
             >
-              <option value="Pla Pro">Pla Pro</option>
-              <option value="Pla Avançat">Pla Avançat</option>
-              <option value="Pla Elit">Pla Elit</option>
+              <option value="Pla de Venda">Pla de Venda</option>
+              <option value="Pla Roure">Pla Roure</option>
+              <option value="Pla Territori">Pla Territori</option>
+              <option value="Pla Mirador">Pla Mirador</option>
             </select>
           ) : (
             <p className="font-bold text-slate-900 dark:text-white capitalize">{planData.pla_assignat}</p>

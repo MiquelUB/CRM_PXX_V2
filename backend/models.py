@@ -19,6 +19,8 @@ class Municipi(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     codi_ine: str = Field(unique=True, index=True)
     nom: str
+    provincia: Optional[str] = None
+    poblacio: Optional[int] = None
     adreca_fisica: Optional[str] = None
     email_general: Optional[str] = None
     telefon_general: Optional[str] = None
@@ -72,6 +74,8 @@ class ContacteSchema(BaseModel):
 class MunicipiSchema(BaseModel):
     codi_ine: str
     nom: str
+    provincia: Optional[str] = None
+    poblacio: Optional[int] = None
     adreca_fisica: Optional[str] = None
     email_general: Optional[str] = None # Canviat a str per flexibilitat si cal, però validat com a email al frontend
     telefon_general: Optional[str] = None
@@ -79,5 +83,5 @@ class MunicipiSchema(BaseModel):
 class OnboardingRequest(BaseModel):
     municipi: MunicipiSchema
     contactes: List[ContacteSchema]
-    pla_assignat: str = "Pla Basic"
+    pla_assignat: str = "Pla de Venda"
 

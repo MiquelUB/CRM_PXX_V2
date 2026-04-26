@@ -300,7 +300,7 @@ async def delete_contacte(contact_id: int, session=Depends(get_session)):
 
 @app.get("/municipis")
 async def get_municipis(session=Depends(get_session)):
-    statement = select(Municipi)
+    statement = select(Municipi).options(selectinload(Municipi.deal))
     result = await session.execute(statement)
     return result.scalars().all()
 
@@ -329,9 +329,9 @@ async def create_municipi(municipi: Municipi, session=Depends(get_session)):
     
     # Creació del Deal associat segons la nova arquitectura
     nou_deal = Deal(
-        municipi_id=municipi.codi_ine,
-        estat="prospecte"
-        # pla_tipus i preu_acordat queden a None inicialment
+        municipi_id=municipi.id,
+        pla_assignat="Pla de Venda", # Valor per defecte
+        estat_kanban=EstatDeal.NOU
     )
     session.add(nou_deal)
     await session.commit()
