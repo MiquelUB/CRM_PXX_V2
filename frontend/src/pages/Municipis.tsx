@@ -19,7 +19,7 @@ const Municipis: React.FC = () => {
     provincia: '',
     poblacio: '',
     adreca_fisica: '',
-    pla_assignat: 'Pla de Venda' 
+    pla_saas: 'Pla de Venda' 
   });
 
   const handleDelete = async (id: string) => {
@@ -40,7 +40,7 @@ const Municipis: React.FC = () => {
           poblacio: formData.poblacio ? parseInt(formData.poblacio) : null,
           adreca_fisica: formData.adreca_fisica
         },
-        pla_assignat: formData.pla_assignat,
+        pla_assignat: formData.pla_saas, // Mantenim pla_assignat pel backend onboarding
         contactes: [] 
       };
 
@@ -53,7 +53,7 @@ const Municipis: React.FC = () => {
       if (response.ok) {
         const result = await response.json();
         setIsModalOpen(false);
-        setFormData({ nom: '', codi_ine: '', provincia: '', poblacio: '', adreca_fisica: '', pla_assignat: 'Pla de Venda' });
+        setFormData({ nom: '', codi_ine: '', provincia: '', poblacio: '', adreca_fisica: '', pla_saas: 'Pla de Venda' });
         mutate();
         navigate(`/deals/${result.deal_id}`);
       } else {
@@ -145,12 +145,12 @@ const Municipis: React.FC = () => {
                   </div>
                   <div className="bg-indigo-50 dark:bg-indigo-900/20 p-3 rounded-2xl border border-indigo-100 dark:border-indigo-800/50">
                     <label className="block text-[10px] font-black uppercase text-indigo-900 dark:text-indigo-400 mb-1.5 tracking-widest">
-                      Pla a Assignar *
+                      Pla de Subscripció *
                     </label>
                     <select 
                       required
-                      value={formData.pla_assignat}
-                      onChange={(e) => setFormData({...formData, pla_assignat: e.target.value})}
+                      value={formData.pla_saas}
+                      onChange={(e) => setFormData({...formData, pla_saas: e.target.value})}
                       className="w-full bg-white dark:bg-slate-900 border border-indigo-200 dark:border-indigo-800 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold text-indigo-600 shadow-sm"
                     >
                       <option value="Pla de Venda">Pla de Venda</option>
