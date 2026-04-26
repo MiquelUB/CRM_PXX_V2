@@ -157,10 +157,15 @@ async def get_deal_full(deal_id: int, session: AsyncSession = Depends(get_sessio
     
     return deal
 
-@app.get("/deals", response_model=List[DealReadWithMunicipi])
+@app.get("/deals", response_model=List[DealKanbanRead])
 async def get_deals(limit: int = 50, offset: int = 0, session=Depends(get_session)):
     """Llistat de tots els deals amb paginació."""
-    statement = select(Deal).options(joinedload(Deal.municipi)).limit(limit).offset(offset)
+    statement = (
+        select(Deal)
+        .options(joinedload(Deal.municipi), selectinload(Deal.contactes))
+        .limit(limit)
+        .offset(offset)
+    )
     result = await session.execute(statement)
     return result.scalars().all()
 
