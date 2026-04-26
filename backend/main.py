@@ -5,7 +5,7 @@ from starlette.requests import Request
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlalchemy.orm import selectinload, joinedload
-from database import get_session, init_db, engine
+from database import get_session, engine
 from models import Deal, Municipi, Interaccio, Contacte, EstatDeal, OnboardingRequest
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel
@@ -434,27 +434,5 @@ async def ask_agent(deal_id: int, body: AgentQuery, session=Depends(get_session)
         
     resposta = await ask_kimi_k2(session, deal_id, query)
     return {"response": resposta}
-
-@app.get("/sys/force-reset-db")
-async def force_reset_database():
-    """ATENCIÓ: Endpoint d'emergència per sincronitzar l'esquema V2 a producció."""
-    import logging
-    from sqlalchemy import text
-    try:
-        logging.info("Iniciant purga de la base de dades...")
-        # 1. Esborra absolutament totes les taules existents (V1)
-        async with engine.begin() as conn:
-            # Per a PostgreSQL, hem d'assegurar-nos de fer un DROP en cascada si hi ha conflictes
-            await conn.run_sync(SQLModel.metadata.drop_all)
-            # 2. Crea les taules de zero basant-se en el models.py actual (V2)
-            await conn.run_sync(SQLModel.metadata.create_all)
-        
-        return {
-            "status": "success", 
-            "message": "Esquema V2 recreat correctament. La base de dades està neta i sincronitzada amb el codi."
-        }
-    except Exception as e:
-        logging.error(f"Fallada en recrear la DB: {str(e)}")
-        return {"status": "error", "detail": str(e)}
 
 app.include_router(agent_router)
