@@ -60,14 +60,29 @@ async def global_exception_handler(request: Request, exc: Exception):
 async def health_check():
     return {"status": "ok", "version": "2.1.2", "timestamp": datetime.utcnow().isoformat()}
 
-# --- ESQUEMES DE VALIDACIÓ (PATCH) ---
+# --- ESQUEMES DE VALIDACIÓ (API) ---
 
 class DealStatusUpdate(BaseModel):
     estat_kanban: EstatDeal
 
 class DealSaaSUpdate(BaseModel):
-    pla_assignat: Optional[str] = None
+    pla_saas: Optional[str] = None
+    pla_assignat: Optional[str] = None # Mantenim per compatibilitat legacy
     preu_acordat: Optional[float] = None
+
+class ContacteCreate(BaseModel):
+    nom: str
+    email: str
+    telefon: Optional[str] = None
+    carrec: Optional[str] = None
+    municipi_id: int
+    deal_id: Optional[int] = None
+
+class InteraccioCreate(BaseModel):
+    deal_id: int
+    tipus: str
+    contingut: str
+    metadata_json: Optional[Dict[str, Any]] = None
 
 # --- DEALS (PROJECTES) ---
 
@@ -130,7 +145,7 @@ async def get_deal_full(deal_id: int, session: AsyncSession = Depends(get_sessio
         res["municipi"]["contactes"] = [c.dict() for c in deal.municipi.contactes]
         
     # Ordenació cronològica de la bitàcorra (Timeline)
-    res["interaccions"] = sorted(deal.interaccions, key=lambda x: x.data_creacio, reverse=True)
+    res["interaccions"] = sorted(deal.interaccions, key=lambda x: x.data, reverse=True)
     
     return res
 
@@ -172,6 +187,7 @@ async def full_onboarding(request: OnboardingRequest, session=Depends(get_sessio
         # 3. Crear Deal
         nou_deal = Deal(
             municipi_id=municipi.id,
+            pla_saas=request.pla_assignat,
             pla_assignat=request.pla_assignat,
             estat_kanban=EstatDeal.NOU
         )
@@ -232,8 +248,18 @@ async def update_deal_saas(deal_id: int, request: DealSaaSUpdate, session: Async
     if not deal: raise HTTPException(status_code=404, detail="No trobat")
     
     update_data = request.model_dump(exclude_unset=True)
-    for key, value in update_data.items():
-        setattr(deal, key, value)
+    
+    # Sincronització de camps legacy i nous
+    if "pla_saas" in update_data:
+        deal.pla_saas = update_data["pla_saas"]
+        deal.pla_assignat = update_data["pla_saas"]
+    elif "pla_assignat" in update_data:
+        deal.pla_saas = update_data["pla_assignat"]
+        deal.pla_assignat = update_data["pla_assignat"]
+        
+    if "preu_acordat" in update_data:
+        # El preu acordat podria anar a un camp específic o a metadades
+        pass
     
     session.add(deal)
     await session.commit()
@@ -242,24 +268,22 @@ async def update_deal_saas(deal_id: int, request: DealSaaSUpdate, session: Async
 # --- CONTACTES ---
 
 @app.get("/contactes")
-async def get_contactes(session=Depends(get_session)):
-    statement = select(Contacte).options(selectinload(Contacte.municipi))
+async def get_contactes(limit: int = 100, offset: int = 0, session=Depends(get_session)):
+    """Llistat de contactes amb paginació per evitar OOM."""
+    statement = select(Contacte).options(selectinload(Contacte.municipi)).limit(limit).offset(offset)
     result = await session.execute(statement)
     return result.scalars().all()
 
 @app.post("/contactes")
-async def create_contact(data: dict, session=Depends(get_session)):
-    mid = data.get("municipi_id")
-    if not mid:
-        raise HTTPException(status_code=400, detail="El municipi_id és obligatori")
-        
-    nou_contacte = Contacte(
-        municipi_id=mid,
-        nom=data.get("nom"),
-        carrec=data.get("carrec"),
-        email=data.get("email"),
-        telefon=data.get("telefon")
-    )
+async def create_contact(data: ContacteCreate, session=Depends(get_session)):
+    """Creació de contacte amb validació estricta."""
+    # Verificació de que el deal existeix si s'ha passat
+    if data.deal_id:
+        deal_check = await session.execute(select(Deal).where(Deal.id == data.deal_id))
+        if not deal_check.scalar_one_or_none():
+            raise HTTPException(status_code=404, detail="Deal no trobat")
+            
+    nou_contacte = Contacte(**data.model_dump())
     session.add(nou_contacte)
     try:
         await session.commit()
@@ -267,19 +291,20 @@ async def create_contact(data: dict, session=Depends(get_session)):
     except Exception as e:
         await session.rollback()
         logging.error(f"Error creant contacte: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Error de base de dades")
     return nou_contacte
 
 @app.put("/contactes/{contact_id}")
-async def update_contacte(contact_id: int, data: dict, session=Depends(get_session)):
+async def update_contacte(contact_id: int, data: ContacteCreate, session=Depends(get_session)):
+    """Actualització de contacte amb validació estricta."""
     statement = select(Contacte).where(Contacte.id == contact_id)
     result = await session.execute(statement)
     contacte = result.scalar_one_or_none()
     if not contacte: raise HTTPException(status_code=404, detail="Contacte no trobat")
     
-    for key, value in data.items():
-        if hasattr(contacte, key):
-            setattr(contacte, key, value)
+    update_data = data.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(contacte, key, value)
             
     session.add(contacte)
     await session.commit()
@@ -299,14 +324,15 @@ async def delete_contacte(contact_id: int, session=Depends(get_session)):
 # --- MUNICIPIS ---
 
 @app.get("/municipis")
-async def get_municipis(session=Depends(get_session)):
-    statement = select(Municipi).options(selectinload(Municipi.deal))
+async def get_municipis(limit: int = 100, offset: int = 0, session=Depends(get_session)):
+    """Llistat de municipis amb deals carregats per evitar LazyLoading Error."""
+    statement = select(Municipi).options(selectinload(Municipi.deals)).limit(limit).offset(offset)
     result = await session.execute(statement)
     return result.scalars().all()
 
 @app.patch("/municipis/{municipi_id}")
 async def update_municipi(municipi_id: int, data: dict, session=Depends(get_session)):
-    """Actualitza les dades d'un municipi."""
+    """Actualitza les dades d'un municipi (Manté dict per flexibilitat parcial, però es recomana esquema)."""
     statement = select(Municipi).where(Municipi.id == municipi_id)
     result = await session.execute(statement)
     m = result.scalar_one_or_none()
@@ -322,7 +348,7 @@ async def update_municipi(municipi_id: int, data: dict, session=Depends(get_sess
 
 @app.post("/municipis")
 async def create_municipi(municipi: Municipi, session=Depends(get_session)):
-    """Crea el municipi i autogenera el seu Deal 1:1 associat."""
+    """Crea el municipi i autogenera el seu Deal associat."""
     session.add(municipi)
     await session.commit()
     await session.refresh(municipi)
@@ -330,7 +356,8 @@ async def create_municipi(municipi: Municipi, session=Depends(get_session)):
     # Creació del Deal associat segons la nova arquitectura
     nou_deal = Deal(
         municipi_id=municipi.id,
-        pla_assignat="Pla de Venda", # Valor per defecte
+        pla_saas="Pla de Venda",
+        pla_assignat="Pla de Venda",
         estat_kanban=EstatDeal.NOU
     )
     session.add(nou_deal)
@@ -341,24 +368,23 @@ async def create_municipi(municipi: Municipi, session=Depends(get_session)):
 # --- TIMELINE (INTERACCIONS) ---
 
 @app.post("/interaccions")
-async def create_interaccio(data: dict, session: AsyncSession = Depends(get_session)):
-    nou = Interaccio(
-        deal_id=data.get("deal_id"),
-        tipus=data.get("tipus", "NOTA_MANUAL"),
-        contingut=data.get("contingut", ""),
-        metadata_json=data.get("metadata_json", {})
-    )
+async def create_interaccio(data: InteraccioCreate, session: AsyncSession = Depends(get_session)):
+    """Creació d'interacció amb validació estricta."""
+    nou = Interaccio(**data.model_dump())
     session.add(nou)
     await session.commit()
     await session.refresh(nou)
     return nou
 
 @app.get("/emails")
-async def get_emails(session=Depends(get_session)):
+async def get_emails(limit: int = 50, offset: int = 0, session=Depends(get_session)):
+    """Llistat d'emails amb paginació."""
     statement = (
         select(Interaccio)
         .where(Interaccio.tipus == "EMAIL")
-        .order_by(Interaccio.data_creacio.desc())
+        .order_by(Interaccio.data.desc())
+        .limit(limit)
+        .offset(offset)
     )
     result = await session.execute(statement)
     return result.scalars().all()

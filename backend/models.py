@@ -1,6 +1,7 @@
+import sqlalchemy as sa
 from sqlmodel import SQLModel, Field, Relationship
 from typing import List, Optional, Dict, Any
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from sqlalchemy import Column, JSON
 from pydantic import BaseModel, EmailStr
@@ -27,11 +28,12 @@ class Municipi(SQLModel, table=True):
     
     # Relacions
     contactes: List["Contacte"] = Relationship(back_populates="municipi")
-    deal: Optional["Deal"] = Relationship(back_populates="municipi")
+    deals: List["Deal"] = Relationship(back_populates="municipi")
 
 class Contacte(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     municipi_id: int = Field(foreign_key="municipi.id")
+    deal_id: Optional[int] = Field(default=None, foreign_key="deal.id")
     nom: str
     carrec: Optional[str] = None
     email: str = Field(index=True)
@@ -39,26 +41,35 @@ class Contacte(SQLModel, table=True):
     
     # Relacions
     municipi: Municipi = Relationship(back_populates="contactes")
+    deal: Optional["Deal"] = Relationship(back_populates="contactes")
 
 class Deal(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    municipi_id: int = Field(foreign_key="municipi.id", unique=True)
-    pla_assignat: str 
+    municipi_id: int = Field(foreign_key="municipi.id")
+    pla_assignat: str # Legacy field
+    pla_saas: str = Field(default="Pla de Venda") # New consistent field
     estat_kanban: EstatDeal = Field(default=EstatDeal.NOU)
     is_active: bool = Field(default=True) # Soft Delete
+    data_creacio: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc),
+        sa_column=sa.Column(sa.DateTime(timezone=True), nullable=False)
+    )
     
     # Relacions
-    municipi: Municipi = Relationship(back_populates="deal")
+    municipi: Municipi = Relationship(back_populates="deals")
     interaccions: List["Interaccio"] = Relationship(back_populates="deal")
+    contactes: List["Contacte"] = Relationship(back_populates="deal")
 
 class Interaccio(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     deal_id: int = Field(foreign_key="deal.id", index=True)
     tipus: str = Field(index=True) # nota, email_in, email_out, calendar, ai_prompt, ai_response, system_log
     contingut: str
-    # JSON real a DB utilitzant sa_column de SQLAlchemy
     metadata_json: Optional[Dict[str, Any]] = Field(default=None, sa_column=Column(JSON))
-    data_creacio: datetime = Field(default_factory=datetime.utcnow)
+    data: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc),
+        sa_column=sa.Column(sa.DateTime(timezone=True), nullable=False)
+    )
     
     # Relacions
     deal: Deal = Relationship(back_populates="interaccions")
@@ -77,7 +88,7 @@ class MunicipiSchema(BaseModel):
     provincia: Optional[str] = None
     poblacio: Optional[int] = None
     adreca_fisica: Optional[str] = None
-    email_general: Optional[str] = None # Canviat a str per flexibilitat si cal, però validat com a email al frontend
+    email_general: Optional[str] = None
     telefon_general: Optional[str] = None
 
 class OnboardingRequest(BaseModel):
