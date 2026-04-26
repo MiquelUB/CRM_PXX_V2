@@ -23,6 +23,8 @@ export interface Municipi {
   id: number;
   codi_ine: string;
   nom: string;
+  provincia?: string;
+  poblacio?: number;
   adreca_fisica?: string;
   email_general?: string;
   telefon_general?: string;

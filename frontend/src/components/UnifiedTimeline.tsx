@@ -3,7 +3,6 @@ import { useDeal } from '../context/DealContext';
 import { 
   Mail, 
   MessageSquare, 
-  User, 
   Clock,
   Loader2,
   FileText,
@@ -164,11 +163,4 @@ const UnifiedTimeline: React.FC = () => {
     </div>
   );
 };
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
-
 export default UnifiedTimeline;

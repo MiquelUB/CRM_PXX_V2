@@ -11,7 +11,7 @@ const MunicipiDataModule: React.FC = () => {
     nom: '',
     provincia: '',
     poblacio: 0,
-    adreça: '',
+    adreca_fisica: '',
     email_general: '',
     telefon_general: ''
   });
@@ -24,7 +24,7 @@ const MunicipiDataModule: React.FC = () => {
         nom: deal.municipi.nom || '',
         provincia: deal.municipi.provincia || '',
         poblacio: deal.municipi.poblacio || 0,
-        adreça: deal.municipi.adreça || '',
+        adreca_fisica: deal.municipi.adreca_fisica || '',
         email_general: deal.municipi.email_general || '',
         telefon_general: deal.municipi.telefon_general || ''
       });
@@ -36,7 +36,7 @@ const MunicipiDataModule: React.FC = () => {
     setIsSaving(true);
     try {
       const payload = {
-        adreça: formData.adreça,
+        adreca_fisica: formData.adreca_fisica,
         email_general: formData.email_general,
         telefon_general: formData.telefon_general,
         poblacio: parseInt(formData.poblacio.toString()) || 0,
@@ -131,13 +131,13 @@ const MunicipiDataModule: React.FC = () => {
             {isEditing ? (
               <input 
                 type="text" 
-                value={formData.adreça}
-                onChange={e => setFormData({...formData, adreça: e.target.value})}
+                value={formData.adreca_fisica}
+                onChange={e => setFormData({...formData, adreca_fisica: e.target.value})}
                 className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 outline-none text-sm"
                 placeholder="Ex: Plaça de la Vila, 1"
               />
             ) : (
-              <p className="text-sm text-slate-700 dark:text-slate-300 italic">{formData.adreça || 'Adreça no registrada'}</p>
+              <p className="text-sm text-slate-700 dark:text-slate-300 italic">{formData.adreca_fisica || 'Adreça no registrada'}</p>
             )}
           </div>
           

@@ -6,8 +6,6 @@ import ContactsModule from '../components/ContactsModule';
 import UnifiedTimeline from '../components/UnifiedTimeline';
 import KimiChatDrawer from '../components/KimiChatDrawer';
 import { 
-  MapPin, 
-  User, 
   PlusCircle, 
   Bot, 
   Info 
