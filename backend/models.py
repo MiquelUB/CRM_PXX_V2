@@ -122,6 +122,10 @@ class DealReadWithMunicipi(DealRead):
     contactes: List[ContacteRead] = []
     interaccions: List[InteraccioRead] = []
 
+class DealKanbanRead(DealRead):
+    municipi: Optional[MunicipiRead] = None
+    contactes: List[ContacteRead] = []
+
 class InteraccioReadWithContext(InteraccioRead):
     deal: Optional[DealReadWithMunicipi] = None
 

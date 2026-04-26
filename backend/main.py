@@ -10,7 +10,8 @@ from database import get_session, engine
 from models import (
     Deal, Municipi, Interaccio, Contacte, EstatDeal, OnboardingRequest,
     MunicipiRead, DealRead, ContacteRead, InteraccioRead,
-    MunicipiReadWithDeals, DealReadWithMunicipi, InteraccioReadWithContext
+    MunicipiReadWithDeals, DealReadWithMunicipi, InteraccioReadWithContext,
+    DealKanbanRead
 )
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel
@@ -66,7 +67,8 @@ async def add_request_id_and_logging(request: Request, call_next):
             content={
                 "detail": "Error intern del servidor",
                 "request_id": request_id
-            }
+            },
+            headers={"Access-Control-Allow-Origin": "*"}
         )
 
 @app.exception_handler(Exception)
@@ -126,7 +128,7 @@ class InteraccioCreate(BaseModel):
 
 # --- DEALS (PROJECTES) ---
 
-@app.get("/deals/kanban", response_model=List[DealReadWithMunicipi])
+@app.get("/deals/kanban", response_model=List[DealKanbanRead])
 async def get_kanban_deals(session: AsyncSession = Depends(get_session)):
     """Obté els deals actius per al Kanban."""
     print("Cridant Kanban...")
