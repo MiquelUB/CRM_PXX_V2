@@ -20,10 +20,18 @@ const Contactes: React.FC = () => {
     const method = editingContact ? 'PUT' : 'POST';
     const url = editingContact ? `${API_BASE}/contactes/${editingContact.id}` : `${API_BASE}/contactes`;
     
+    const payload = {
+      nom: formData.nom,
+      email: formData.email,
+      telefon: formData.telefon || null,
+      carrec: formData.carrec || null,
+      municipi_id: parseInt(formData.municipi_id)
+    };
+    
     await fetch(url, {
       method,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(formData)
+      body: JSON.stringify(payload)
     });
 
     setIsModalOpen(false);
@@ -105,7 +113,7 @@ const Contactes: React.FC = () => {
                 <select required value={formData.municipi_id} onChange={e => setFormData({...formData, municipi_id: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-500">
                   <option value="">Selecciona un municipi...</option>
                   {municipis?.map((m: any) => (
-                    <option key={m.codi_ine} value={m.codi_ine}>{m.nom}</option>
+                    <option key={m.id} value={m.id}>{m.nom}</option>
                   ))}
                 </select>
               </div>
