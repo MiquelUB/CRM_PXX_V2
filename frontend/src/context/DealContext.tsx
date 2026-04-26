@@ -7,7 +7,7 @@ export interface Interaccio {
   id: number;
   tipus: string;
   contingut: string;
-  data_creacio: string;
+  data: string; // ISO String from backend 'data' field
   metadata_json?: any;
 }
 
@@ -17,6 +17,8 @@ export interface Contacte {
   carrec?: string;
   email: string;
   telefon?: string;
+  municipi_id: number;
+  deal_id?: number;
 }
 
 export interface Municipi {
@@ -28,14 +30,16 @@ export interface Municipi {
   adreca_fisica?: string;
   email_general?: string;
   telefon_general?: string;
-  contactes?: Contacte[];
 }
 
 export interface DealData {
   id: number;
   estat_kanban: string;
   pla_assignat: string;
+  pla_saas: string;
+  is_active: boolean;
   municipi: Municipi;
+  contactes: Contacte[];
   interaccions: Interaccio[];
 }
 

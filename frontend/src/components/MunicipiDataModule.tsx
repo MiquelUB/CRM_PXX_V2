@@ -44,7 +44,7 @@ const MunicipiDataModule: React.FC = () => {
         nom: formData.nom
       };
 
-      const response = await fetch(`${API_BASE}/municipis/${deal.municipi.codi_ine}`, {
+      const response = await fetch(`${API_BASE}/municipis/${deal.municipi.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)

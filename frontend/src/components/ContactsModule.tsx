@@ -27,7 +27,7 @@ const ContactsModule: React.FC = () => {
         email: formData.email,
         telefon: formData.telefon,
         carrec: formData.carrec,
-        municipi_id: deal.municipi.codi_ine // Injectem el codi_ine del municipi
+        municipi_id: deal.municipi.id
       };
 
       const response = await fetch(`${API_BASE}/contactes`, {
@@ -50,9 +50,9 @@ const ContactsModule: React.FC = () => {
 
   if (!deal?.municipi) return null;
 
-  const contactes = deal.municipi.contactes || [];
+  const contactes = deal.contactes || [];
 
-  console.log("V2 CARREGADA. Municipi actual:", deal?.municipi?.codi_ine);
+  console.log("V2 CARREGADA. Municipi actual:", deal?.municipi?.id);
 
   return (
     <div className="bg-white dark:bg-slate-950 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
@@ -115,7 +115,7 @@ const ContactsModule: React.FC = () => {
         {contactes.length === 0 ? (
           <p className="text-slate-400 text-sm italic text-center py-4">No hi ha contactes vinculats.</p>
         ) : (
-          contactes.map(c => (
+          contactes.map((c: any) => (
             <div key={c.id} className="p-3 bg-slate-50 dark:bg-slate-900/30 border border-slate-100 dark:border-slate-800 rounded-xl space-y-2">
               <div className="flex justify-between items-start">
                 <div>

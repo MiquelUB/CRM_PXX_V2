@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import type { DropResult } from '@hello-pangea/dnd';
 import useSWR from 'swr';
@@ -11,12 +11,8 @@ interface DealSnippet {
   pla_assignat: string;
   municipi: { 
     nom: string;
-    contactes?: { nom: string }[];
   };
-}
-
-interface KanbanData {
-  [key: string]: DealSnippet[];
+  contactes?: { nom: string }[];
 }
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
@@ -26,33 +22,39 @@ const fetcher = (url: string) => fetch(url).then(res => {
 });
 
 const KanbanBoard: React.FC = () => {
-  const { data, mutate } = useSWR<KanbanData>(`${API_BASE}/deals/kanban`, fetcher);
+  const { data: rawDeals, mutate } = useSWR<DealSnippet[]>(`${API_BASE}/deals/kanban`, fetcher);
   const navigate = useNavigate();
 
   const columns = ["NOU", "CONTACTAT", "DEMO", "PROPOSTA", "TANCAT"];
+
+  // Grup dades per columnes
+  const data = useMemo(() => {
+    const board: { [key: string]: DealSnippet[] } = {
+      "NOU": [], "CONTACTAT": [], "DEMO": [], "PROPOSTA": [], "TANCAT": []
+    };
+    if (rawDeals) {
+      rawDeals.forEach(deal => {
+        const status = deal.estat_kanban?.toUpperCase() || "NOU";
+        if (board[status]) {
+          board[status].push(deal);
+        } else {
+          board["NOU"].push(deal);
+        }
+      });
+    }
+    return board;
+  }, [rawDeals]);
 
   const onDragEnd = async (result: DropResult) => {
     const { source, destination, draggableId } = result;
     if (!destination) return;
     if (source.droppableId === destination.droppableId && source.index === destination.index) return;
 
-    // ACTUALITZACIÓ OPTIMISTA
     const dealId = parseInt(draggableId);
     const newStatus = destination.droppableId;
     
-    const newData = { ...data };
-    const sourceCol = [...(newData[source.droppableId] || [])];
-    const destCol = [...(newData[destination.droppableId] || [])];
-    
-    const [movedDeal] = sourceCol.splice(source.index, 1);
-    movedDeal.estat_kanban = newStatus;
-    destCol.splice(destination.index, 0, movedDeal);
-    
-    newData[source.droppableId] = sourceCol;
-    newData[destination.droppableId] = destCol;
-
-    mutate(newData, false);
-
+    // Per a l'actualització optimista amb la llista plana, és una mica més complex, 
+    // però podem fer el mutate amb les dades que esperem del backend després
     try {
       await fetch(`${API_BASE}/deals/${dealId}/estat`, {
         method: 'PATCH',
@@ -76,7 +78,7 @@ const KanbanBoard: React.FC = () => {
     return colors[p || 'roure'] || colors['roure'];
   };
 
-  if (!data) return <div className="h-64 flex items-center justify-center">Carregant Pipeline...</div>;
+  if (!rawDeals) return <div className="h-64 flex items-center justify-center">Carregant Pipeline...</div>;
 
   return (
     <DragDropContext onDragEnd={onDragEnd}>
@@ -99,7 +101,7 @@ const KanbanBoard: React.FC = () => {
                     snapshot.isDraggingOver ? 'bg-indigo-50/50 dark:bg-indigo-900/10' : 'bg-slate-100/50 dark:bg-slate-950/50'
                   }`}
                 >
-                  {Array.isArray(data[colId]) && data[colId].map((deal, index) => (
+                  {data[colId].map((deal, index) => (
                     <Draggable key={deal.id.toString()} draggableId={deal.id.toString()} index={index}>
                       {(provided, snapshot) => (
                         <div
@@ -129,7 +131,7 @@ const KanbanBoard: React.FC = () => {
                             <div className="flex items-center gap-1.5">
                               <User size={12} className="text-slate-400" />
                               <span className="truncate">
-                                {deal.municipi?.contactes?.[0]?.nom || 'Sense contacte'}
+                                {deal.contactes?.[0]?.nom || 'Sense contacte'}
                               </span>
                             </div>
                           </div>

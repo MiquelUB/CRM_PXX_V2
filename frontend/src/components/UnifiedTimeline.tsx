@@ -53,7 +53,7 @@ const UnifiedTimeline: React.FC = () => {
   };
 
   const sortedInteraccions = deal?.interaccions 
-    ? [...deal.interaccions].sort((a, b) => new Date(b.data_creacio).getTime() - new Date(a.data_creacio).getTime())
+    ? [...deal.interaccions].sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime())
     : [];
 
   const getIcon = (tipus: string) => {
@@ -137,7 +137,7 @@ const UnifiedTimeline: React.FC = () => {
                       </div>
                       <div className="flex items-center gap-1 text-xs text-slate-400 font-mono">
                         <Clock size={12} />
-                        <span>{new Date(item.data_creacio).toLocaleString()}</span>
+                        <span>{new Date(item.data).toLocaleString()}</span>
                       </div>
                     </div>
                     
