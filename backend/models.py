@@ -77,7 +77,7 @@ class Interaccio(SQLModel, table=True):
     )
     
     # Relacions
-    deal: Deal = Relationship(back_populates="interaccions")
+    deal: Deal = Relationship(back_populates="accions")
 
 # --- ESQUEMES DE VALIDACIÓ (Pydantic per a l'API) ---
 
