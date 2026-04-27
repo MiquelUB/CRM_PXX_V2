@@ -373,6 +373,18 @@ async def create_municipi(municipi: Municipi, session=Depends(get_session)):
     
     return municipi
 
+@app.delete("/municipis/{municipi_id}")
+async def delete_municipi(municipi_id: int, session=Depends(get_session)):
+    """Esborrat total d'un municipi (inclou Deals i Contactes per cascada)."""
+    statement = select(Municipi).where(Municipi.id == municipi_id)
+    result = await session.execute(statement)
+    m = result.scalar_one_or_none()
+    if not m: raise HTTPException(status_code=404, detail="Municipi no trobat")
+    
+    await session.delete(m)
+    await session.commit()
+    return {"detail": "Municipi esborrat correctament"}
+
 # --- TIMELINE (INTERACCIONS) ---
 
 @app.post("/interaccions")

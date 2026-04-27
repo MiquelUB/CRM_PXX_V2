@@ -27,8 +27,8 @@ class Municipi(SQLModel, table=True):
     telefon_general: Optional[str] = None
     
     # Relacions
-    contactes: List["Contacte"] = Relationship(back_populates="municipi")
-    deals: List["Deal"] = Relationship(back_populates="municipi")
+    contactes: List["Contacte"] = Relationship(back_populates="municipi", sa_relationship_kwargs={"cascade": "all, delete"})
+    deals: List["Deal"] = Relationship(back_populates="municipi", sa_relationship_kwargs={"cascade": "all, delete"})
 
 class Contacte(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -57,7 +57,7 @@ class Deal(SQLModel, table=True):
     
     # Relacions
     municipi: Municipi = Relationship(back_populates="deals")
-    interaccions: List["Interaccio"] = Relationship(back_populates="deal")
+    interaccions: List["Interaccio"] = Relationship(back_populates="deal", sa_relationship_kwargs={"cascade": "all, delete"})
     contactes: List["Contacte"] = Relationship(back_populates="deal")
 
 class Interaccio(SQLModel, table=True):

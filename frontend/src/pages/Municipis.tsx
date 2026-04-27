@@ -242,7 +242,7 @@ const Municipis: React.FC = () => {
                       </div>
                     )}
                     <button 
-                      onClick={() => handleDelete(m.codi_ine)}
+                      onClick={() => handleDelete(m.id)}
                       className="p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-lg transition-colors"
                       title="Eliminar Municipi"
                     >
