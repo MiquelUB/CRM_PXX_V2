@@ -55,11 +55,20 @@ const KanbanBoard: React.FC = () => {
     
     // Per a l'actualització optimista amb la llista plana, és una mica més complex, 
     // però podem fer el mutate amb les dades que esperem del backend després
+    const statusMapping: { [key: string]: string } = {
+      "NOU": "Nou",
+      "CONTACTAT": "Contactat",
+      "DEMO": "Demo",
+      "PROPOSTA": "Proposta",
+      "TANCAT": "Tancat"
+    };
+    const estatBackend = statusMapping[newStatus.toUpperCase()] || "Nou";
+
     try {
       await fetch(`${API_BASE}/deals/${dealId}/estat`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ estat_kanban: newStatus })
+        body: JSON.stringify({ estat_kanban: estatBackend })
       });
       mutate();
     } catch (error) {
