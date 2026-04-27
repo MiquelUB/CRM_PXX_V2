@@ -489,10 +489,7 @@ async def get_calendar_events_formatted(session=Depends(get_session)):
     
     statement = (
         select(Interaccio)
-        .where(
-            Interaccio.tipus.in_(tipus_calendar),
-            Interaccio.is_completed == False
-        )
+        .where(Interaccio.is_completed == False)
         .options(joinedload(Interaccio.deal).joinedload(Deal.municipi))
     )
     result = await session.execute(statement)
