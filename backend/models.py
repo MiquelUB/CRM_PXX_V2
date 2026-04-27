@@ -64,6 +64,7 @@ class Deal(SQLModel, table=True):
     contactes: List["Contacte"] = Relationship(back_populates="deal")
 
 class Interaccio(SQLModel, table=True):
+    __tablename__ = "interaccio"
     id: Optional[int] = Field(default=None, primary_key=True)
     deal_id: int = Field(foreign_key="deal.id", index=True)
     tipus: str = Field(index=True) # nota, email_in, email_out, calendar, ai_prompt, ai_response, system_log
@@ -130,6 +131,7 @@ class DealReadWithMunicipi(DealRead):
 class DealKanbanRead(DealRead):
     municipi: Optional[MunicipiRead] = None
     contactes: List[ContacteRead] = []
+    accions: List[InteraccioRead] = []
 
 class InteraccioReadWithContext(InteraccioRead):
     deal: Optional[DealReadWithMunicipi] = None

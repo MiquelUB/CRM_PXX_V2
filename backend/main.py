@@ -143,7 +143,8 @@ async def get_kanban_deals(session: AsyncSession = Depends(get_session)):
     print("Cridant Kanban...")
     statement = select(Deal).where(Deal.is_active == True).options(
         joinedload(Deal.municipi),
-        selectinload(Deal.contactes)
+        selectinload(Deal.contactes),
+        selectinload(Deal.accions)
     )
     result = await session.execute(statement)
     deals = result.scalars().all()
@@ -171,7 +172,11 @@ async def get_deals(limit: int = 50, offset: int = 0, session=Depends(get_sessio
     """Llistat de tots els deals amb paginació."""
     statement = (
         select(Deal)
-        .options(joinedload(Deal.municipi), selectinload(Deal.contactes))
+        .options(
+            joinedload(Deal.municipi), 
+            selectinload(Deal.contactes),
+            selectinload(Deal.accions)
+        )
         .limit(limit)
         .offset(offset)
     )
