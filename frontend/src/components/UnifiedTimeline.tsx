@@ -52,8 +52,8 @@ const UnifiedTimeline: React.FC = () => {
     }
   };
 
-  const sortedInteraccions = deal?.interaccions 
-    ? [...deal.interaccions].sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime())
+  const sortedInteraccions = deal?.accions 
+    ? [...deal.accions].sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime())
     : [];
 
   const getIcon = (tipus: string) => {

@@ -156,7 +156,7 @@ async def get_deal_full(deal_id: int, session: AsyncSession = Depends(get_sessio
     statement = select(Deal).where(Deal.id == deal_id).options(
         joinedload(Deal.municipi),
         selectinload(Deal.contactes),
-        selectinload(Deal.interaccions)
+        selectinload(Deal.accions)
     )
     result = await session.execute(statement)
     deal = result.scalar_one_or_none()

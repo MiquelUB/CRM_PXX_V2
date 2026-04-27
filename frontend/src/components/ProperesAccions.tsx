@@ -8,11 +8,11 @@ const ProperesAccions: React.FC = () => {
   const [isAdding, setIsAdding] = useState(false);
   const [loadingType, setLoadingType] = useState<string | null>(null);
 
-  if (!deal?.interaccions) return null;
+  if (!deal?.accions) return null;
 
   // Filtrem per tipus accionables i no completats
   const tipusAccions = ["calendar", "trucada", "demo", "reunio", "tasca_programada"];
-  const pendents = deal.interaccions.filter(i => tipusAccions.includes(i.tipus) && !i.is_completed);
+  const pendents = deal.accions.filter(i => tipusAccions.includes(i.tipus) && !i.is_completed);
 
   const toggleStatus = async (id: number) => {
     try {

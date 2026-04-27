@@ -60,7 +60,7 @@ class Deal(SQLModel, table=True):
     
     # Relacions
     municipi: Municipi = Relationship(back_populates="deals")
-    interaccions: List["Interaccio"] = Relationship(back_populates="deal", sa_relationship_kwargs={"cascade": "all, delete"})
+    accions: List["Interaccio"] = Relationship(back_populates="deal", sa_relationship_kwargs={"cascade": "all, delete"})
     contactes: List["Contacte"] = Relationship(back_populates="deal")
 
 class Interaccio(SQLModel, table=True):
@@ -125,7 +125,7 @@ class MunicipiReadWithDeals(MunicipiRead):
 class DealReadWithMunicipi(DealRead):
     municipi: Optional[MunicipiRead] = None
     contactes: List[ContacteRead] = []
-    interaccions: List[InteraccioRead] = []
+    accions: List[InteraccioRead] = []
 
 class DealKanbanRead(DealRead):
     municipi: Optional[MunicipiRead] = None
