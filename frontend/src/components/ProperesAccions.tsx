@@ -12,7 +12,7 @@ const ProperesAccions: React.FC = () => {
 
   // Filtrem per tipus accionables i no completats
   const tipusAccions = ["calendar", "trucada", "demo", "reunio", "tasca_programada"];
-  const pendents = deal.accions.filter(i => tipusAccions.includes(i.tipus) && !i.is_completed);
+  const pendents = deal.accions.filter((i: any) => tipusAccions.includes(i.tipus) && !i.is_completed);
 
   const toggleStatus = async (id: number) => {
     try {
@@ -92,7 +92,7 @@ const ProperesAccions: React.FC = () => {
           <p className="text-[10px] text-slate-400 italic text-center py-2">No hi ha accions pendents.</p>
         ) : (
           <div className="space-y-4">
-            {pendents.map(task => (
+            {pendents.map((task: any) => (
               <div key={task.id} className="flex items-start gap-3 group">
                 <button 
                   onClick={() => toggleStatus(task.id)}

@@ -9,6 +9,7 @@ export interface Interaccio {
   contingut: string;
   data: string; // ISO String from backend 'data' field
   metadata_json?: any;
+  is_completed: boolean;
 }
 
 export interface Contacte {
@@ -40,7 +41,7 @@ export interface DealData {
   is_active: boolean;
   municipi: Municipi;
   contactes: Contacte[];
-  interaccions: Interaccio[];
+  accions: Interaccio[];
 }
 
 interface DealContextType {

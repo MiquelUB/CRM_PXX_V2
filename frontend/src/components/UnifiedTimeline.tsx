@@ -53,7 +53,7 @@ const UnifiedTimeline: React.FC = () => {
   };
 
   const sortedInteraccions = deal?.accions 
-    ? [...deal.accions].sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime())
+    ? [...deal.accions].sort((a: any, b: any) => new Date(b.data).getTime() - new Date(a.data).getTime())
     : [];
 
   const getIcon = (tipus: string) => {
@@ -114,7 +114,7 @@ const UnifiedTimeline: React.FC = () => {
           </div>
         ) : (
           <div className="space-y-6 relative before:absolute before:left-4 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200 dark:before:bg-slate-800">
-            {sortedInteraccions.map((item) => {
+            {sortedInteraccions.map((item: any) => {
               const metadata = item.metadata_json || {};
               const autor = metadata.autor || 'Sistema'; // Recuperem l'autor del JSON de forma segura
 
