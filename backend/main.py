@@ -16,6 +16,7 @@ from models import (
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel
 from services.ai_agent import ask_kimi_k2
+from routers.knowledge import router as knowledge_router
 import traceback
 import logging
 import uuid
@@ -336,6 +337,11 @@ async def update_deal(deal_id: int, request: DealUpdate, session: AsyncSession =
     await session.commit()
     await session.refresh(deal)
     return deal
+
+# --- REGISTRE DE ROUTERS ---
+app.include_router(knowledge_router, prefix="/api")
+
+# --- ENDPOINTS EXISTENTS ---
 
 # --- CONTACTES ---
 

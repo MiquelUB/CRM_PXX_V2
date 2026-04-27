@@ -4,7 +4,7 @@ from typing import List, Optional, Dict, Any
 from datetime import datetime, timezone
 from enum import Enum
 from sqlalchemy import Column, JSON
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field as PydanticField
 
 # --- ENUMS DE NEGOCI ---
 class EstatDeal(str, Enum):
@@ -171,4 +171,12 @@ class DealUpdate(BaseModel):
     pla_saas: Optional[str] = None
     pla_assignat: Optional[str] = None
     estat_kanban: Optional[EstatDeal] = None
+
+class GlobalKnowledgeRead(BaseModel):
+    id: int
+    key: str
+    content: str
+
+class KnowledgeUpdate(BaseModel):
+    content: str = PydanticField(..., max_length=50000)
 
