@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Depends, HTTPException
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.requests import Request
@@ -15,7 +16,7 @@ from models import (
 )
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel
-from services.ai_agent import ask_kimi_k2
+from services.ai_agent import ask_kimi_v4, generate_outbound_email
 from routers.knowledge import router as knowledge_router
 import traceback
 import logging
@@ -99,9 +100,17 @@ async def add_request_id_and_logging(request: Request, call_next):
             headers={"Access-Control-Allow-Origin": "*"}
         )
 
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    logging.warning(f"Error de validació a {request.url.path}: {exc.errors()}")
+    return JSONResponse(
+        status_code=422,
+        content={"detail": exc.errors(), "body": exc.body},
+        headers={"Access-Control-Allow-Origin": "*"}
+    )
+
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
-    # Bypass per a excepcions HTTP controlades
     if isinstance(exc, HTTPException):
         return JSONResponse(
             status_code=exc.status_code,
@@ -109,7 +118,6 @@ async def global_exception_handler(request: Request, exc: Exception):
             headers={"Access-Control-Allow-Origin": "*"}
         )
     
-    # Logging exhaustiu només per a caigudes reals
     logging.error(f"Error crític 500 a {request.method} {request.url.path}: {str(exc)}", exc_info=True)
     return JSONResponse(
         status_code=500,
@@ -581,7 +589,7 @@ async def ask_agent(deal_id: int, body: AgentQuery, session=Depends(get_session)
     if not deal_check.scalar_one_or_none():
         raise HTTPException(status_code=404, detail="Deal no trobat")
         
-    resposta = await ask_kimi_k2(session, deal_id, query)
+    resposta = await ask_kimi_v4(session, deal_id, "general_query", query)
     return {"response": resposta}
 
 app.include_router(agent_router)
