@@ -32,6 +32,18 @@ async def lifespan(app: FastAPI):
     yield
     logging.info("Tancant connexions...")
 
+@app.on_event("startup")
+async def startup_db_fix():
+    """Arregla la base de dades en arrencar si falten columnes (Bypass de migració)."""
+    async with engine.begin() as conn:
+        try:
+            # PostgreSQL suporta IF NOT EXISTS per a columnes en versions recents,
+            # però per seguretat ho intentem i capturem l'error si ja existeix.
+            await conn.execute(text('ALTER TABLE interaccio ADD COLUMN IF NOT EXISTS is_completed BOOLEAN DEFAULT FALSE;'))
+            logging.info("DB PATCH: Columna is_completed verificada/afegida.")
+        except Exception as e:
+            logging.info(f"DB PATCH: Nota: La columna ja existia o s'ha gestionat l'error: {e}")
+
 app = FastAPI(
     title="CRM PXX v2 - Expert Refactored API",
     lifespan=lifespan
