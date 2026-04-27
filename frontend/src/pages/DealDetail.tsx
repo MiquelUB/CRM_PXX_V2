@@ -4,6 +4,7 @@ import SaaSPlanModule from '../components/SaaSPlanModule';
 import MunicipiDataModule from '../components/MunicipiDataModule';
 import ContactsModule from '../components/ContactsModule';
 import UnifiedTimeline from '../components/UnifiedTimeline';
+import ProperesAccions from '../components/ProperesAccions';
 import KimiChatDrawer from '../components/KimiChatDrawer';
 import { 
   PlusCircle, 
@@ -46,6 +47,9 @@ const DealDetail: React.FC = () => {
         {/* Columna Esquerra: Dades Base (4/12) */}
         <div className="col-span-12 lg:col-span-4 space-y-6">
           
+          {/* Bloc 0: Properes Accions (Checklist) */}
+          <ProperesAccions />
+
           {/* Bloc 1: Dades del Municipi */}
           <MunicipiDataModule />
 

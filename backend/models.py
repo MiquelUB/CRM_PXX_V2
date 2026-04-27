@@ -69,6 +69,7 @@ class Interaccio(SQLModel, table=True):
     tipus: str = Field(index=True) # nota, email_in, email_out, calendar, ai_prompt, ai_response, system_log
     contingut: str
     metadata_json: Optional[Dict[str, Any]] = Field(default=None, sa_column=Column(JSON))
+    is_completed: bool = Field(default=False)
     data: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc),
         sa_column=sa.Column(sa.DateTime(timezone=True), nullable=False)
@@ -113,6 +114,7 @@ class InteraccioRead(BaseModel):
     tipus: str
     contingut: str
     metadata_json: Optional[Dict[str, Any]] = None
+    is_completed: bool = False
     data: datetime
 
 # --- ESQUEMES COMPOSTOS (Per a relacions carregades) ---

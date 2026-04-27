@@ -126,6 +126,9 @@ class InteraccioCreate(BaseModel):
     contingut: str
     metadata_json: Optional[Dict[str, Any]] = None
 
+class InteraccioUpdate(BaseModel):
+    is_completed: bool
+
 # --- DEALS (PROJECTES) ---
 
 @app.get("/deals/kanban", response_model=List[DealKanbanRead])
@@ -404,6 +407,19 @@ async def create_interaccio(data: InteraccioCreate, session: AsyncSession = Depe
     await session.commit()
     await session.refresh(nou)
     return nou
+
+@app.patch("/interaccions/{interaccio_id}/status")
+async def update_interaccio_status(interaccio_id: int, request: InteraccioUpdate, session: AsyncSession = Depends(get_session)):
+    """Canvia l'estat de completat d'una interacció/tasca."""
+    stmt = select(Interaccio).where(Interaccio.id == interaccio_id)
+    res = await session.execute(stmt)
+    interaccio = res.scalar_one_or_none()
+    if not interaccio: raise HTTPException(status_code=404, detail="No trobat")
+    
+    interaccio.is_completed = request.is_completed
+    session.add(interaccio)
+    await session.commit()
+    return {"status": "ok", "is_completed": interaccio.is_completed}
 
 @app.get("/emails", response_model=List[InteraccioReadWithContext])
 async def get_emails(limit: int = 50, offset: int = 0, session=Depends(get_session)):
