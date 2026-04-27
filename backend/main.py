@@ -209,7 +209,7 @@ async def full_onboarding(request: OnboardingRequest, session=Depends(get_sessio
 
         # 4. Crear Contactes (Llista)
         for c_data in request.contactes:
-            nou_contacte = Contacte(**c_data.model_dump(), municipi_id=municipi.id)
+            nou_contacte = Contacte(**c_data.model_dump(), municipi_id=municipi.id, deal_id=nou_deal.id)
             session.add(nou_contacte)
 
         # 5. Interacció de Benvinguda (System Log)
