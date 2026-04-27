@@ -33,7 +33,10 @@ class Municipi(SQLModel, table=True):
 class Contacte(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     municipi_id: int = Field(foreign_key="municipi.id")
-    deal_id: Optional[int] = Field(default=None, foreign_key="deal.id")
+    deal_id: Optional[int] = Field(
+        default=None, 
+        sa_column=sa.Column(sa.Integer, sa.ForeignKey("deal.id", ondelete="SET NULL"), nullable=True)
+    )
     nom: str
     carrec: Optional[str] = None
     email: str = Field(index=True)
@@ -134,6 +137,7 @@ class ContacteSchema(BaseModel):
     carrec: Optional[str] = None
     email: EmailStr
     telefon: Optional[str] = None
+    deal_id: Optional[int] = None
 
 class MunicipiSchema(BaseModel):
     codi_ine: str

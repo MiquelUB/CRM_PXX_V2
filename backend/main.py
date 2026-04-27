@@ -292,6 +292,15 @@ async def create_contact(data: ContacteCreate, session=Depends(get_session)):
             raise HTTPException(status_code=404, detail="Deal no trobat")
             
     nou_contacte = Contacte(**data.model_dump())
+    
+    # Auto-vincular a Deal actiu si no s'ha passat deal_id però sí municipi_id
+    if not nou_contacte.deal_id and nou_contacte.municipi_id:
+        stmt = select(Deal).where(Deal.municipi_id == nou_contacte.municipi_id, Deal.is_active == True)
+        res = await session.execute(stmt)
+        active_deal = res.scalar_one_or_none()
+        if active_deal:
+            nou_contacte.deal_id = active_deal.id
+
     session.add(nou_contacte)
     try:
         await session.commit()
