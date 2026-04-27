@@ -42,6 +42,7 @@ export interface DealData {
   municipi: Municipi;
   contactes: Contacte[];
   accions: Interaccio[];
+  municipality_context?: string;
 }
 
 interface DealContextType {

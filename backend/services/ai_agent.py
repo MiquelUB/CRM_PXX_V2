@@ -4,8 +4,8 @@ from openai import AsyncOpenAI
 from sqlalchemy.orm import selectinload, joinedload
 from sqlmodel import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from datetime import datetime
-from models import Deal, Interaccio
+from datetime import datetime, timezone
+from models import Deal, Interaccio, GlobalKnowledge
 
 # SDK configurat per a OpenRouter
 def get_ai_client():
@@ -24,7 +24,7 @@ async def get_deal_history_context(session: AsyncSession, deal_id: int) -> str:
         .where(Deal.id == deal_id)
         .options(
             joinedload(Deal.municipi),
-            selectinload(Deal.interaccions)
+            selectinload(Deal.accions)
         )
     )
     result = await session.execute(statement)
@@ -33,22 +33,46 @@ async def get_deal_history_context(session: AsyncSession, deal_id: int) -> str:
     if not deal:
         return "No s'ha trobat informació per a aquest Deal."
 
-    history = sorted(deal.interaccions, key=lambda x: x.data_creacio)
+    history = sorted(deal.accions, key=lambda x: x.data)
     m_name = deal.municipi.nom if deal.municipi else "Municipi desconegut"
     context_lines = [f"CONTEXT DEL DEAL: {m_name} (Estat: {deal.estat_kanban})"]
     for i in history:
-        date_str = i.data_creacio.strftime("%Y-%m-%d %H:%M")
+        date_str = i.data.strftime("%Y-%m-%d %H:%M")
         context_lines.append(f"[{date_str}]: {i.tipus} - {i.contingut}")
     
     return "\n".join(context_lines)
 
+async def get_double_context(session: AsyncSession, deal_id: int) -> str:
+    """Recupera el context global i el local (municipality_context) del Deal."""
+    # 1. Context Global
+    global_stmt = select(GlobalKnowledge).where(GlobalKnowledge.key == "pxx_general")
+    global_res = await session.execute(global_stmt)
+    global_obj = global_res.scalar_one_or_none()
+    global_content = global_obj.content if global_obj else ""
+
+    # 2. Context Local (del Deal)
+    deal_stmt = select(Deal).where(Deal.id == deal_id)
+    deal_res = await session.execute(deal_stmt)
+    deal = deal_res.scalar_one_or_none()
+    local_context = deal.municipality_context if deal and deal.municipality_context else ""
+
+    return f"""<global_pxx_context>
+{global_content}
+</global_pxx_context>
+
+<deal_local_context>
+{local_context}
+</deal_local_context>"""
+
 async def ask_kimi_k2(session: AsyncSession, deal_id: int, user_query: str):
     """Bucle estricte de Tool Calling per a l'Agent IA (Kimi k2.5)."""
     history_context = await get_deal_history_context(session, deal_id)
+    double_context = await get_double_context(session, deal_id)
     
     system_prompt = (
         "Ets Kimi k2.5, l'agent IA expert del CRM PXX v2. "
         "Tens permís per crear cites al calendari utilitzant la funció 'crear_esdeveniment_calendari'.\n\n"
+        f"{double_context}\n\n"
         f"{history_context}"
     )
 
@@ -101,7 +125,7 @@ async def ask_kimi_k2(session: AsyncSession, deal_id: int, user_query: str):
                             deal_id=deal_id,
                             tipus="calendar",
                             contingut=args.get("titol"),
-                            data_creacio=datetime.utcnow(),
+                            data=data_dt,
                             metadata_json={
                                 "data_hora": data_dt.isoformat(),
                                 "creat_per": "ai_agent"

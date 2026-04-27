@@ -62,6 +62,14 @@ class Deal(SQLModel, table=True):
     municipi: Municipi = Relationship(back_populates="deals")
     accions: List["Interaccio"] = Relationship(back_populates="deal", sa_relationship_kwargs={"cascade": "all, delete"})
     contactes: List["Contacte"] = Relationship(back_populates="deal")
+    
+    # Context d'IA
+    municipality_context: Optional[str] = Field(default=None)
+
+class GlobalKnowledge(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    key: str = Field(index=True, unique=True)
+    content: str
 
 class Interaccio(SQLModel, table=True):
     __tablename__ = "interaccio"
@@ -108,6 +116,7 @@ class DealRead(BaseModel):
     estat_kanban: Optional[EstatDeal] = EstatDeal.NOU
     is_active: bool = True
     data_creacio: datetime
+    municipality_context: Optional[str] = None
 
 class InteraccioRead(BaseModel):
     id: int
@@ -156,4 +165,10 @@ class OnboardingRequest(BaseModel):
     municipi: MunicipiSchema
     contactes: List[ContacteSchema]
     pla_assignat: str = "Pla de Venda"
+
+class DealUpdate(BaseModel):
+    municipality_context: Optional[str] = None
+    pla_saas: Optional[str] = None
+    pla_assignat: Optional[str] = None
+    estat_kanban: Optional[EstatDeal] = None
 

@@ -6,12 +6,12 @@ from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlalchemy import text
 from sqlalchemy.orm import selectinload, joinedload
-from database import get_session, engine
+from database import get_session, engine, async_session_maker
 from models import (
     Deal, Municipi, Interaccio, Contacte, EstatDeal, OnboardingRequest,
     MunicipiRead, DealRead, ContacteRead, InteraccioRead,
     MunicipiReadWithDeals, DealReadWithMunicipi, InteraccioReadWithContext,
-    DealKanbanRead
+    DealKanbanRead, GlobalKnowledge, DealUpdate
 )
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel
@@ -29,6 +29,22 @@ from contextlib import asynccontextmanager
 async def lifespan(app: FastAPI):
     """Gestió segura del cicle de vida de l'aplicació."""
     logging.info("Backend arrencat correctament. L'esquema es gestiona via Alembic.")
+    
+    # Self-healing de dades (Injecció de context global per defecte)
+    async with engine.begin() as conn:
+        # Nota: L'esquema ja ha d'estar creat via Alembic
+        try:
+            from sqlmodel import Session
+            async with async_session_maker() as session:
+                statement = select(GlobalKnowledge).where(GlobalKnowledge.key == "pxx_general")
+                result = await session.execute(statement)
+                if not result.scalar_one_or_none():
+                    session.add(GlobalKnowledge(key="pxx_general", content="Introduïu el context global aquí."))
+                    await session.commit()
+                    logging.info("DATA SEED: Context global 'pxx_general' injectat.")
+        except Exception as e:
+            logging.warning(f"DATA SEED: No s'ha pogut verificar/injectar el context global: {e}")
+
     yield
     logging.info("Tancant connexions...")
 
@@ -39,15 +55,14 @@ app = FastAPI(
 
 @app.on_event("startup")
 async def startup_db_fix():
-    """Arregla la base de dades en arrencar si falten columnes (Bypass de migració)."""
+    """Arregla la base de dades en arrencar si falten columnes (Bypass de migració per a casos crítics)."""
     async with engine.begin() as conn:
         try:
-            # PostgreSQL suporta IF NOT EXISTS per a columnes en versions recents,
-            # però per seguretat ho intentem i capturem l'error si ja existeix.
+            # Mantenim els patches crítics existents
             await conn.execute(text('ALTER TABLE interaccio ADD COLUMN IF NOT EXISTS is_completed BOOLEAN DEFAULT FALSE;'))
             logging.info("DB PATCH: Columna is_completed verificada/afegida.")
         except Exception as e:
-            logging.info(f"DB PATCH: Nota: La columna ja existia o s'ha gestionat l'error: {e}")
+            logging.info(f"DB PATCH: Nota: {e}")
 
 # --- CONFIGURACIÓ CORS ---
 frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
@@ -298,6 +313,29 @@ async def update_deal_saas(deal_id: int, request: DealSaaSUpdate, session: Async
     session.add(deal)
     await session.commit()
     return {"status": "ok"}
+
+@app.patch("/deals/{deal_id}", response_model=DealRead)
+async def update_deal(deal_id: int, request: DealUpdate, session: AsyncSession = Depends(get_session)):
+    """Actualització genèrica de Deal (inclou context de municipi)."""
+    statement = select(Deal).where(Deal.id == deal_id)
+    result = await session.execute(statement)
+    deal = result.scalar_one_or_none()
+    if not deal:
+        raise HTTPException(status_code=404, detail="Deal no trobat")
+    
+    update_data = request.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        if key == "pla_saas" or key == "pla_assignat":
+            # Sincronització de camps legacy i nous
+            deal.pla_saas = value
+            deal.pla_assignat = value
+        else:
+            setattr(deal, key, value)
+    
+    session.add(deal)
+    await session.commit()
+    await session.refresh(deal)
+    return deal
 
 # --- CONTACTES ---
 

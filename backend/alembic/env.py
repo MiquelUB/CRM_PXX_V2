@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Importació de models per al metadata
-from models import Municipi, Deal, Contacte, Interaccio
+from models import Municipi, Deal, Contacte, Interaccio, GlobalKnowledge
 
 # Configuració de loggers
 config = context.config

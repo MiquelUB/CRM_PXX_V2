@@ -5,6 +5,7 @@ import MunicipiDataModule from '../components/MunicipiDataModule';
 import ContactsModule from '../components/ContactsModule';
 import UnifiedTimeline from '../components/UnifiedTimeline';
 import ProperesAccions from '../components/ProperesAccions';
+import MunicipalityContextModule from '../components/MunicipalityContextModule';
 import KimiChatDrawer from '../components/KimiChatDrawer';
 import { 
   PlusCircle, 
@@ -56,7 +57,10 @@ const DealDetail: React.FC = () => {
           {/* Bloc 2: Contactes */}
           <ContactsModule />
 
-          {/* Bloc 3: Mòdul SaaS Plan */}
+          {/* Bloc 3: Context Local de l'IA (Pujada .md) */}
+          <MunicipalityContextModule />
+
+          {/* Bloc 4: Mòdul SaaS Plan */}
           <SaaSPlanModule />
 
           {/* Botó Kimi (IA Agent) */}
