@@ -129,6 +129,12 @@ class InteraccioCreate(BaseModel):
 class InteraccioUpdate(BaseModel):
     is_completed: bool
 
+class AccioCreate(BaseModel):
+    tipus: str
+    contingut: str
+    data_programada: datetime
+    metadata_json: Optional[Dict[str, Any]] = None
+
 # --- DEALS (PROJECTES) ---
 
 @app.get("/deals/kanban", response_model=List[DealKanbanRead])
@@ -421,6 +427,39 @@ async def update_interaccio_status(interaccio_id: int, request: InteraccioUpdate
     await session.commit()
     return {"status": "ok", "is_completed": interaccio.is_completed}
 
+@app.post("/deals/{deal_id}/accions")
+async def create_deal_accio(deal_id: int, request: AccioCreate, session: AsyncSession = Depends(get_session)):
+    """Programa una nova acció per a un deal."""
+    nou = Interaccio(
+        deal_id=deal_id,
+        tipus=request.tipus,
+        contingut=request.contingut,
+        is_completed=False,
+        data=request.data_programada,
+        metadata_json=request.metadata_json or {}
+    )
+    # Injectem la data al metadata per compatibilitat amb el calendari actual
+    if "data_hora" not in nou.metadata_json:
+        nou.metadata_json["data_hora"] = request.data_programada.isoformat()
+        
+    session.add(nou)
+    await session.commit()
+    await session.refresh(nou)
+    return nou
+
+@app.patch("/accions/{accio_id}/completar")
+async def completar_accio(accio_id: int, session: AsyncSession = Depends(get_session)):
+    """Marca una acció com a completada."""
+    stmt = select(Interaccio).where(Interaccio.id == accio_id)
+    res = await session.execute(stmt)
+    accio = res.scalar_one_or_none()
+    if not accio: raise HTTPException(status_code=404, detail="Acció no trobada")
+    
+    accio.is_completed = True
+    session.add(accio)
+    await session.commit()
+    return {"status": "ok"}
+
 @app.get("/emails", response_model=List[InteraccioReadWithContext])
 async def get_emails(limit: int = 50, offset: int = 0, session=Depends(get_session)):
     """Llistat d'emails amb context carregat."""
@@ -439,10 +478,16 @@ async def get_emails(limit: int = 50, offset: int = 0, session=Depends(get_sessi
 
 @app.get("/calendar/events", response_model=List[dict])
 async def get_calendar_events_formatted(session=Depends(get_session)):
-    """Retorna els esdeveniments formatats des de la bitàcola centralitzada."""
+    """Retorna els esdeveniments pendents des de la bitàcola centralitzada."""
+    # Tipus que es mostren al calendari
+    tipus_calendar = ["calendar", "trucada", "demo", "reunio", "tasca_programada"]
+    
     statement = (
         select(Interaccio)
-        .where(Interaccio.tipus == "calendar")
+        .where(
+            Interaccio.tipus.in_(tipus_calendar),
+            Interaccio.is_completed == False
+        )
         .options(joinedload(Interaccio.deal).joinedload(Deal.municipi))
     )
     result = await session.execute(statement)
