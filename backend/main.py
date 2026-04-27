@@ -32,6 +32,11 @@ async def lifespan(app: FastAPI):
     yield
     logging.info("Tancant connexions...")
 
+app = FastAPI(
+    title="CRM PXX v2 - Expert Refactored API",
+    lifespan=lifespan
+)
+
 @app.on_event("startup")
 async def startup_db_fix():
     """Arregla la base de dades en arrencar si falten columnes (Bypass de migració)."""
@@ -43,11 +48,6 @@ async def startup_db_fix():
             logging.info("DB PATCH: Columna is_completed verificada/afegida.")
         except Exception as e:
             logging.info(f"DB PATCH: Nota: La columna ja existia o s'ha gestionat l'error: {e}")
-
-app = FastAPI(
-    title="CRM PXX v2 - Expert Refactored API",
-    lifespan=lifespan
-)
 
 # --- CONFIGURACIÓ CORS ---
 frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
