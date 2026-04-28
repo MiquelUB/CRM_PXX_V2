@@ -3,19 +3,17 @@ import { useDeal } from '../context/DealContext';
 import { 
   Mail, 
   MessageSquare, 
-  Clock,
   Loader2,
   FileText,
   Activity,
   Send,
-  AlertCircle
+  Bot
 } from 'lucide-react';
 
 const UnifiedTimeline: React.FC = () => {
   const { deal, refreshDeal } = useDeal();
   const [content, setContent] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
