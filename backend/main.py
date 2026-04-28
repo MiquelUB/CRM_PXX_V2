@@ -184,16 +184,14 @@ class AccioCreate(BaseModel):
 
 @app.get("/deals/kanban", response_model=List[DealKanbanRead])
 async def get_kanban_deals(session: AsyncSession = Depends(get_session)):
-    """Obté els deals actius per al Kanban."""
-    print("Cridant Kanban...")
-    statement = select(Deal).where(Deal.is_active == True).options(
-        joinedload(Deal.municipi),
-        selectinload(Deal.contactes),
-        selectinload(Deal.accions)
+    """Obé els deals actius per al Kanban. Query lleuger: només carrega el municipi."""
+    statement = (
+        select(Deal)
+        .where(Deal.is_active == True)
+        .options(joinedload(Deal.municipi))
     )
     result = await session.execute(statement)
     deals = result.scalars().all()
-    print(f"Deals trobats: {len(deals)}")
     return deals
 
 @app.get("/deals/{deal_id}", response_model=DealReadWithMunicipi)
@@ -215,15 +213,10 @@ async def get_deal_full(deal_id: int, session: AsyncSession = Depends(get_sessio
 
 @app.get("/deals", response_model=List[DealKanbanRead])
 async def get_deals(limit: int = 50, offset: int = 0, session=Depends(get_session)):
-    """Llistat de tots els deals amb paginació."""
+    """Llistat de tots els deals. Query lleuger: només carrega el municipi."""
     statement = (
         select(Deal)
-        .options(
-            joinedload(Deal.municipi), 
-            selectinload(Deal.contactes),
-            selectinload(Deal.accions),
-            selectinload(Deal.calendari_events)
-        )
+        .options(joinedload(Deal.municipi))
         .limit(limit)
         .offset(offset)
     )

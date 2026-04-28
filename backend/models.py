@@ -161,17 +161,34 @@ class InteraccioRead(BaseModel):
 class MunicipiReadWithDeals(MunicipiRead):
     deals: List[DealRead] = []
 
+class CalendariEventRead(BaseModel):
+    id: int
+    deal_id: int
+    municipi_id: Optional[int] = None
+    data_inici: datetime
+    data_fi: Optional[datetime] = None
+    tipus: str
+    descripcio: Optional[str] = None
+    completat: bool
+
+    model_config = {"from_attributes": True}
+
+# ⚡ Schema LLEUGER per al Kanban: sense relacions pesades.
+# Pydantic no intentarà llegir accions/calendari_events → zero lazy-load.
+class DealKanbanRead(DealRead):
+    municipi: Optional[MunicipiRead] = None
+
+    model_config = {"from_attributes": True}
+
+# 📦 Schema COMPLET per a l'Epicentre (GET /deals/{id}):
+# Conté tot el context per a la UI i l'agent IA.
 class DealReadWithMunicipi(DealRead):
     municipi: Optional[MunicipiRead] = None
     contactes: List[ContacteRead] = []
     accions: List[InteraccioRead] = []
-    calendari_events: List["CalendariEventRead"] = []
+    calendari_events: List[CalendariEventRead] = []
 
-class DealKanbanRead(DealRead):
-    municipi: Optional[MunicipiRead] = None
-    contactes: List[ContacteRead] = []
-    accions: List[InteraccioRead] = []
-    calendari_events: List["CalendariEventRead"] = []
+    model_config = {"from_attributes": True}
 
 class InteraccioReadWithContext(InteraccioRead):
     deal: Optional[DealReadWithMunicipi] = None
@@ -196,16 +213,6 @@ class OnboardingRequest(BaseModel):
     municipi: MunicipiSchema
     contactes: List[ContacteSchema]
     pla_assignat: str = "Pla de Venda"
-
-class CalendariEventRead(BaseModel):
-    id: int
-    deal_id: int
-    municipi_id: Optional[int] = None
-    data_inici: datetime
-    data_fi: Optional[datetime] = None
-    tipus: str
-    descripcio: Optional[str] = None
-    completat: bool
 
 class DealUpdate(BaseModel):
     municipality_context: Optional[str] = None
