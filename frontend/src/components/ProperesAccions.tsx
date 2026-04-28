@@ -12,11 +12,10 @@ const ProperesAccions: React.FC<ProperesAccionsProps> = ({ onTaskClick }) => {
   const [isAdding, setIsAdding] = useState(false);
   const [loadingType, setLoadingType] = useState<string | null>(null);
 
-  if (!deal?.accions) return null;
+  if (!deal?.calendari_events) return null;
 
-  // Filtrem per tipus accionables i no completats
-  const tipusAccions = ["calendar", "trucada", "demo", "reunio", "tasca_programada"];
-  const pendents = deal.accions.filter((i: any) => tipusAccions.includes(i.tipus) && !i.is_completed);
+  // Filtrem per tasques actives (checklist) i no completades
+  const pendents = deal.calendari_events.filter((ev: any) => ev.es_tasca && !ev.completat);
 
   const toggleStatus = (e: React.MouseEvent, id: number) => {
     e.stopPropagation(); // Evitem que s'obri el modal en clicar el cercle
@@ -116,12 +115,12 @@ const ProperesAccions: React.FC<ProperesAccionsProps> = ({ onTaskClick }) => {
                 </button>
                 <div className="flex-1">
                   <p className="text-sm font-bold text-slate-900 dark:text-white leading-tight group-hover:text-indigo-600 transition-colors">
-                    {task.contingut}
+                    {task.descripcio}
                   </p>
                   <div className="flex items-center gap-2 mt-1">
                     <span className="flex items-center gap-1 text-[10px] text-slate-500 uppercase font-black tracking-tighter">
                       {getIcon(task.tipus)}
-                      {new Date(task.data).toLocaleDateString('ca-ES', { day: 'numeric', month: 'short' })}
+                      {new Date(task.data_inici).toLocaleDateString('ca-ES', { day: 'numeric', month: 'short' })}
                     </span>
                     <span className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-900 rounded text-[8px] font-bold uppercase text-slate-400">
                       {task.tipus}

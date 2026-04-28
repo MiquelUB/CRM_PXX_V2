@@ -9,7 +9,17 @@ export interface Interaccio {
   contingut: string;
   data: string; // ISO String from backend 'data' field
   metadata_json?: any;
-  is_completed: boolean;
+  completat: boolean;
+}
+
+export interface CalendariEvent {
+  id: number;
+  tipus: string;
+  descripcio: string;
+  data_inici: string;
+  data_fi?: string;
+  completat: boolean;
+  es_tasca: boolean;
 }
 
 export interface Contacte {
@@ -42,7 +52,10 @@ export interface DealData {
   municipi: Municipi;
   contactes: Contacte[];
   accions: Interaccio[];
+  calendari_events: CalendariEvent[];
   municipality_context?: string;
+  proper_pas?: string;
+  data_seguiment?: string;
 }
 
 interface DealContextType {
