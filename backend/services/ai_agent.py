@@ -159,18 +159,86 @@ Ara redacta el teu seguint EXACTAMENT aquest format visual i estructura."""
 
 # --- INTERFÍCIE PER AL FRONTEND ---
 
+# --- PERSISTÈNCIA I HISTORIAL ---
+
+async def get_chat_history(session: AsyncSession, deal_id: int, limit: int = 20) -> List[Dict[str, str]]:
+    """
+    Recupera l'historial de xat persistent exclusiu per a aquest deal.
+    """
+    statement = (
+        select(Interaccio)
+        .where(Interaccio.deal_id == deal_id, Interaccio.tipus == "kimi_chat")
+        .order_by(Interaccio.data.asc())
+    )
+    result = await session.execute(statement)
+    interactions = result.scalars().all()
+    
+    messages = []
+    for i in interactions:
+        role = i.metadata_json.get("role", "assistant") if i.metadata_json else "assistant"
+        messages.append({"role": role, "content": i.contingut})
+    
+    return messages[-limit:] # Retornem els últims missatges segons el límit
+
+async def save_kimi_interaction(session: AsyncSession, deal_id: int, role: str, content: str):
+    """
+    Guarda un missatge del xat a la taula d'interaccions.
+    """
+    interaccio = Interaccio(
+        deal_id=deal_id,
+        tipus="kimi_chat",
+        contingut=content,
+        metadata_json={"role": role, "creat_per": "Kimi Agent" if role == "assistant" else "Usuari"},
+        is_completed=True
+    )
+    session.add(interaccio)
+    await session.commit()
+
+# --- INTERFÍCIE PER AL FRONTEND (PERSISTENT) ---
+
+async def interact_with_kimi_persistent(session: AsyncSession, deal_id: int, user_query: str):
+    """
+    Flux principal de xat persistent.
+    1. Recupera context del deal.
+    2. Recupera historial de xat.
+    3. Genera resposta i guarda ambdues parts a la DB.
+    """
+    # Context base del Deal
+    context = await build_deal_context_stateless(session, deal_id)
+    if context.startswith("ERROR"): return context
+
+    # Historial de xat previ
+    chat_history = await get_chat_history(session, deal_id)
+
+    # Construcció del Prompt
+    system_prompt = (
+        "Ets Kimi, l'assistent estratègic B2G de PXX. "
+        "El teu objectiu és ajudar a tancar aquest deal amb èxit. "
+        "Sigues directe, analític i segueix la Directiva Mañez-Atòmic: frases curtes, sense paraules buides. "
+        f"\nCONTEXT ACTUAL DEL DEAL:\n{context}"
+    )
+
+    messages = [{"role": "system", "content": system_prompt}]
+    messages.extend(chat_history)
+    messages.append({"role": "user", "content": user_query})
+
+    # Trucada a OpenRouter
+    res = await call_openrouter_stateless(messages)
+    if "error" in res: return res["error"]
+
+    kimi_response = res.get("choices", [{}])[0].get("message", {}).get("content", "Error en la resposta de Kimi.")
+
+    # Persistència: Guardem la pregunta i la resposta
+    await save_kimi_interaction(session, deal_id, "user", user_query)
+    await save_kimi_interaction(session, deal_id, "assistant", kimi_response)
+
+    return kimi_response
+
 async def ask_kimi_v4(session: AsyncSession, deal_id: int, task_type: str, user_query: Optional[str] = None):
     """
-    Mantingut per a consultes genèriques o per invocar el pipeline de correus.
+    Router mantenit per compatibilitat.
     """
     if task_type == 'conversion_email':
         return await generate_outbound_email(session, deal_id, task_type)
     
-    # Per a altres consultes, mantenim un flux simple
-    context = await build_deal_context_stateless(session, deal_id)
-    messages = [
-        {"role": "system", "content": f"Ets Kimi, agent IA del CRM PXX. Context:\n{context}"},
-        {"role": "user", "content": user_query or "Analitza el deal."}
-    ]
-    res = await call_openrouter_stateless(messages)
-    return res.get("choices", [{}])[0].get("message", {}).get("content", "Error en la consulta.")
+    return await interact_with_kimi_persistent(session, deal_id, user_query or "Analitza el deal.")

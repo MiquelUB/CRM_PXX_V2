@@ -2,7 +2,11 @@ import React, { useState } from 'react';
 import { useDeal } from '../context/DealContext';
 import { Circle, Calendar, Phone, Mail, Presentation, Plus, Loader2 } from 'lucide-react';
 
-const ProperesAccions: React.FC = () => {
+interface ProperesAccionsProps {
+  onTaskClick?: (task: any) => void;
+}
+
+const ProperesAccions: React.FC<ProperesAccionsProps> = ({ onTaskClick }) => {
   const { deal, refreshDeal } = useDeal();
   const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
   const [isAdding, setIsAdding] = useState(false);
@@ -14,7 +18,12 @@ const ProperesAccions: React.FC = () => {
   const tipusAccions = ["calendar", "trucada", "demo", "reunio", "tasca_programada"];
   const pendents = deal.accions.filter((i: any) => tipusAccions.includes(i.tipus) && !i.is_completed);
 
-  const toggleStatus = async (id: number) => {
+  const toggleStatus = (e: React.MouseEvent, id: number) => {
+    e.stopPropagation(); // Evitem que s'obri el modal en clicar el cercle
+    handleToggle(id);
+  };
+
+  const handleToggle = async (id: number) => {
     try {
       const response = await fetch(`${API_BASE}/accions/${id}/completar`, {
         method: 'PATCH',
@@ -93,16 +102,20 @@ const ProperesAccions: React.FC = () => {
         ) : (
           <div className="space-y-4">
             {pendents.map((task: any) => (
-              <div key={task.id} className="flex items-start gap-3 group">
+              <div 
+                key={task.id} 
+                onClick={() => onTaskClick && onTaskClick(task)}
+                className="flex items-start gap-3 group cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900/50 p-2 -m-2 rounded-xl transition-colors"
+              >
                 <button 
-                  onClick={() => toggleStatus(task.id)}
+                  onClick={(e) => toggleStatus(e, task.id)}
                   className="mt-0.5 text-slate-300 hover:text-indigo-600 transition-colors"
                   title="Marcar com a fet"
                 >
                   <Circle size={20} />
                 </button>
                 <div className="flex-1">
-                  <p className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
+                  <p className="text-sm font-bold text-slate-900 dark:text-white leading-tight group-hover:text-indigo-600 transition-colors">
                     {task.contingut}
                   </p>
                   <div className="flex items-center gap-2 mt-1">

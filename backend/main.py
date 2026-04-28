@@ -281,7 +281,26 @@ async def full_onboarding(request: OnboardingRequest, session=Depends(get_sessio
         logging.error(f"Error en onboarding: {str(e)}")
         raise HTTPException(status_code=500, detail="Error intern en el procés d'onboarding")
 
-# (Esborrat endpoint /calendar/events/raw per obsolescència i error de model)
+# (Esborrat endpoint /calendar/events/raw per obsolescència i# --- AI AGENT & AUTOMATION ---
+
+@app.get("/agent/deals/{deal_id}/history")
+async def get_agent_history(deal_id: int, session: AsyncSession = Depends(get_session)):
+    """Retorna l'historial de xat persistent per a un deal."""
+    from services.ai_agent import get_chat_history
+    history = await get_chat_history(session, deal_id)
+    return {"history": history}
+
+@app.post("/agent/deals/{deal_id}/ask")
+async def ask_agent(deal_id: int, request: Dict[str, str], session: AsyncSession = Depends(get_session)):
+    """Endpoint principal de l'agent Kimi (Persistent)."""
+    from services.ai_agent import ask_kimi_v4
+    query = request.get("query")
+    if not query:
+        raise HTTPException(status_code=400, detail="Query is required")
+    
+    # Utilitzem la versió persistent que guarda a la DB
+    response = await ask_kimi_v4(session, deal_id, "chat", query)
+    return {"response": response}
 
 @app.patch("/deals/{deal_id}/estat")
 async def update_deal_estat(deal_id: int, request: DealStatusUpdate, session: AsyncSession = Depends(get_session)):
