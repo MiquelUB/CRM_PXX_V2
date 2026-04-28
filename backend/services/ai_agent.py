@@ -130,6 +130,7 @@ async def processar_tool_call_agent(session: AsyncSession, deal_id: int, args: D
             CalendariEvent.completat == False
         )
         if (await session.execute(dup_stmt)).scalar_one_or_none():
+            print(f"[TOOL_CALL] Idempotency HIT for Deal {deal_id}, Type {tipus}")
             return {"status": "success", "message": "Aquesta acció ja està agendada per a aquesta hora (idempotència)."}
 
         # Actualitzem Deal (ACID)
@@ -146,9 +147,11 @@ async def processar_tool_call_agent(session: AsyncSession, deal_id: int, args: D
         )
         session.add(nou)
         await session.commit()
+        print(f"[TOOL_CALL] Success: Deal {deal_id}, Task: {titol}, Start: {dt}")
         return {"status": "success", "message": f"Agendat correctament: {titol} ({dt.strftime('%d/%m %H:%M')})"}
     except Exception as e:
         await session.rollback()
+        print(f"[TOOL_CALL] ERROR: {str(e)}")
         return {"status": "error", "message": str(e)}
 
 # --- INTERACT PERSISTENT ---
