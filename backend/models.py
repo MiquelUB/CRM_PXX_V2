@@ -57,14 +57,41 @@ class Deal(SQLModel, table=True):
         default_factory=lambda: datetime.now(timezone.utc),
         sa_column=sa.Column(sa.DateTime(timezone=True), nullable=False)
     )
-    
+
+    # Camps gestionats per l'Agent IA (nullable per compatibilitat amb registres preexistents)
+    proper_pas: Optional[str] = Field(default=None, sa_column=sa.Column(sa.Text, nullable=True))
+    data_seguiment: Optional[datetime] = Field(
+        default=None,
+        sa_column=sa.Column(sa.DateTime(timezone=True), nullable=True)
+    )
+
     # Relacions
     municipi: Municipi = Relationship(back_populates="deals")
     accions: List["Interaccio"] = Relationship(back_populates="deal", sa_relationship_kwargs={"cascade": "all, delete"})
     contactes: List["Contacte"] = Relationship(back_populates="deal")
-    
+    calendari_events: List["CalendariEvent"] = Relationship(back_populates="deal", sa_relationship_kwargs={"cascade": "all, delete"})
+
     # Context d'IA
     municipality_context: Optional[str] = Field(default=None)
+
+class CalendariEvent(SQLModel, table=True):
+    __tablename__ = "calendari_event"
+    id: Optional[int] = Field(default=None, primary_key=True)
+    deal_id: int = Field(foreign_key="deal.id", index=True)
+    municipi_id: Optional[int] = Field(default=None, foreign_key="municipi.id")
+    data_inici: datetime = Field(
+        sa_column=sa.Column(sa.DateTime(timezone=True), nullable=False)
+    )
+    data_fi: Optional[datetime] = Field(
+        default=None,
+        sa_column=sa.Column(sa.DateTime(timezone=True), nullable=True)
+    )
+    tipus: str = Field(default="seguiment")  # seguiment, demo, reunio, renovacio, general
+    descripcio: Optional[str] = Field(default=None)
+    completat: bool = Field(default=False)
+
+    # Relacions
+    deal: Deal = Relationship(back_populates="calendari_events")
 
 class GlobalKnowledge(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -117,6 +144,8 @@ class DealRead(BaseModel):
     is_active: bool = True
     data_creacio: datetime
     municipality_context: Optional[str] = None
+    proper_pas: Optional[str] = None
+    data_seguiment: Optional[datetime] = None
 
 class InteraccioRead(BaseModel):
     id: int
@@ -166,11 +195,23 @@ class OnboardingRequest(BaseModel):
     contactes: List[ContacteSchema]
     pla_assignat: str = "Pla de Venda"
 
+class CalendariEventRead(BaseModel):
+    id: int
+    deal_id: int
+    municipi_id: Optional[int] = None
+    data_inici: datetime
+    data_fi: Optional[datetime] = None
+    tipus: str
+    descripcio: Optional[str] = None
+    completat: bool
+
 class DealUpdate(BaseModel):
     municipality_context: Optional[str] = None
     pla_saas: Optional[str] = None
     pla_assignat: Optional[str] = None
     estat_kanban: Optional[EstatDeal] = None
+    proper_pas: Optional[str] = None
+    data_seguiment: Optional[datetime] = None
 
 class GlobalKnowledgeRead(BaseModel):
     id: int

@@ -12,12 +12,14 @@ from models import (
     Deal, Municipi, Interaccio, Contacte, EstatDeal, OnboardingRequest,
     MunicipiRead, DealRead, ContacteRead, InteraccioRead,
     MunicipiReadWithDeals, DealReadWithMunicipi, InteraccioReadWithContext,
-    DealKanbanRead, GlobalKnowledge, DealUpdate
+    DealKanbanRead, GlobalKnowledge, DealUpdate, CalendariEvent, CalendariEventRead
 )
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel
 from services.ai_agent import ask_kimi_v4, generate_outbound_email
+from services.imap_service import start_imap_scheduler
 from routers.knowledge import router as knowledge_router
+import asyncio
 import traceback
 import logging
 import uuid
@@ -46,6 +48,9 @@ async def lifespan(app: FastAPI):
                     logging.info("DATA SEED: Context global 'pxx_general' injectat.")
         except Exception as e:
             logging.warning(f"DATA SEED: No s'ha pogut verificar/injectar el context global: {e}")
+
+    # --- INICI ESCORTA PASSIVA IMAP ---
+    asyncio.create_task(start_imap_scheduler())
 
     yield
     logging.info("Tancant connexions...")
@@ -633,16 +638,18 @@ class AgentQuery(BaseModel):
 
 @agent_router.post("/deals/{deal_id}/ask")
 async def ask_agent(deal_id: int, body: AgentQuery, session=Depends(get_session)):
-    """Pregunta a l'agent Kimi sobre un deal específic."""
+    """Pregunta a l'agent Kimi sobre un deal específic. Suporta Function Calling per agendar events."""
     query = body.query
-    # 1. Recuperar dades del deal
-    # (Nota: ask_kimi_k2 ja recupera les dades internes si cal, 
-    # però fem un check previ de que el deal existeix)
     deal_check = await session.execute(select(Deal).where(Deal.id == deal_id))
     if not deal_check.scalar_one_or_none():
         raise HTTPException(status_code=404, detail="Deal no trobat")
-        
-    resposta = await ask_kimi_v4(session, deal_id, "general_query", query)
-    return {"response": resposta}
+
+    result = await ask_kimi_v4(session, deal_id, "general_query", query)
+
+    # ask_kimi_v4 retorna un dict amb {response, tool_action} o directament un string (email pipeline)
+    if isinstance(result, dict):
+        return {"response": result.get("response", ""), "tool_action": result.get("tool_action")}
+    else:
+        return {"response": result, "tool_action": None}
 
 app.include_router(agent_router)

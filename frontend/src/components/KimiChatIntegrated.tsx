@@ -90,7 +90,11 @@ const KimiChatIntegrated: React.FC = () => {
 
       const data = await response.json();
       setMessages(prev => [...prev, { role: 'assistant', content: data.response }]);
-      await refreshDeal();
+
+      // Si l'agent ha executat una acció d'agenda → revalidar tota la UI del Deal
+      if (data.tool_action === 'agenda_created') {
+        await refreshDeal();
+      }
     } catch (error) {
       console.error("Error:", error);
       setMessages(prev => [...prev, { role: 'assistant', content: "M'he quedat sense connexió. Torna-ho a provar." }]);
