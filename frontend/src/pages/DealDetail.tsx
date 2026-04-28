@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDeal } from '../context/DealContext';
 import SaaSPlanModule from '../components/SaaSPlanModule';
 import MunicipiDataModule from '../components/MunicipiDataModule';
@@ -13,7 +13,8 @@ import {
   X,
   FileText,
   Copy,
-  Check
+  Check,
+  Loader2
 } from 'lucide-react';
 
 const DealDetail: React.FC = () => {
