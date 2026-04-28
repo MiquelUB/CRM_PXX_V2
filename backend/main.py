@@ -31,23 +31,7 @@ from contextlib import asynccontextmanager
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Gestió segura del cicle de vida de l'aplicació."""
-    logging.info("Backend arrencat correctament. L'esquema es gestiona via Alembic.")
-    
-    # Self-healing de dades (Injecció de context global per defecte)
-    async with engine.begin() as conn:
-        # Nota: L'esquema ja ha d'estar creat via Alembic
-        try:
-            from sqlmodel import Session
-            async with async_session_maker() as session:
-                statement = select(GlobalKnowledge).where(GlobalKnowledge.key == "pxx_general")
-                result = await session.execute(statement)
-                if not result.scalar_one_or_none():
-                    session.add(GlobalKnowledge(key="pxx_general", content="Introduïu el context global aquí."))
-                    await session.commit()
-                    logging.info("DATA SEED: Context global 'pxx_general' injectat.")
-        except Exception as e:
-            logging.warning(f"DATA SEED: No s'ha pogut verificar/injectar el context global: {e}")
-
+    print("Backend V2: Ready (IMAP Disabled)")
     yield
     logging.info("Tancant connexions...")
 
