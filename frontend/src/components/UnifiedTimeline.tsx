@@ -53,7 +53,9 @@ const UnifiedTimeline: React.FC<UnifiedTimelineProps> = ({ onEntryClick }) => {
   };
 
   const sortedInteraccions = deal?.accions 
-    ? [...deal.accions].sort((a: any, b: any) => new Date(b.data).getTime() - new Date(a.data).getTime())
+    ? [...deal.accions]
+        .filter((i: any) => i.tipus !== 'kimi_chat')
+        .sort((a: any, b: any) => new Date(b.data).getTime() - new Date(a.data).getTime())
     : [];
 
   const getIcon = (tipus: string) => {

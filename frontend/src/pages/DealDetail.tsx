@@ -17,11 +17,23 @@ import {
 } from 'lucide-react';
 
 const DealDetail: React.FC = () => {
-  const { deal, isLoading, error } = useDeal();
+  const { deal, refreshDeal, isLoading, error } = useDeal();
   const [activeModal, setActiveModal] = useState<'contacts' | 'municipi' | 'task' | 'interaction' | null>(null);
   const [selectedTask, setSelectedTask] = useState<any>(null);
   const [selectedInteraction, setSelectedInteraction] = useState<any>(null);
+  const [modalContent, setModalContent] = useState('');
+  const [isUpdating, setIsUpdating] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
+  useEffect(() => {
+    if (selectedTask) {
+      setModalContent(selectedTask.descripcio || selectedTask.contingut || '');
+    } else if (selectedInteraction) {
+      setModalContent(selectedInteraction.contingut || '');
+    }
+  }, [selectedTask, selectedInteraction]);
 
   if (isLoading) return <div className="flex items-center justify-center h-screen"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-900"></div></div>;
   if (error) return <div className="p-8 bg-red-50 text-red-600 rounded-xl m-4 font-bold">Error en la càrrega de l'Epicentre.</div>;
@@ -31,6 +43,7 @@ const DealDetail: React.FC = () => {
     setActiveModal(null);
     setSelectedTask(null);
     setSelectedInteraction(null);
+    setModalContent('');
     setCopied(false);
   };
 
@@ -38,6 +51,25 @@ const DealDetail: React.FC = () => {
     navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleUpdateContent = async (id: number) => {
+    setIsUpdating(true);
+    try {
+      const response = await fetch(`${API_BASE}/interaccions/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contingut: modalContent })
+      });
+      if (response.ok) {
+        await refreshDeal();
+        closeModal();
+      }
+    } catch (err) {
+      console.error("Error al guardar els canvis:", err);
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   return (
@@ -132,12 +164,23 @@ const DealDetail: React.FC = () => {
               <h3 className="font-black text-xs uppercase tracking-widest">
                 {activeModal === 'contacts' && 'Directori de Contactes'}
                 {activeModal === 'municipi' && 'Dades del Municipi'}
-                {activeModal === 'task' && 'Detall de l\'Acció'}
-                {activeModal === 'interaction' && 'Detall de la Interacció'}
+                {activeModal === 'task' && 'Edició de l\'Acció'}
+                {activeModal === 'interaction' && 'Edició del Diari'}
               </h3>
-              <button onClick={closeModal} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-900 rounded-xl transition-colors">
-                <X size={20} />
-              </button>
+              <div className="flex items-center gap-2">
+                {(activeModal === 'task' || activeModal === 'interaction') && (
+                  <button 
+                    onClick={() => handleUpdateContent(selectedTask?.id || selectedInteraction?.id)}
+                    disabled={isUpdating}
+                    className="bg-indigo-600 text-white px-4 py-1.5 rounded-lg text-[10px] font-black uppercase hover:bg-indigo-700 transition-all disabled:opacity-50"
+                  >
+                    {isUpdating ? <Loader2 size={12} className="animate-spin" /> : 'Guardar Canvis'}
+                  </button>
+                )}
+                <button onClick={closeModal} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-900 rounded-xl transition-colors">
+                  <X size={20} />
+                </button>
+              </div>
             </div>
             <div className="p-6">
               {activeModal === 'contacts' && <ContactsModule />}
@@ -152,7 +195,7 @@ const DealDetail: React.FC = () => {
                         <h4 className="text-xl font-bold">{selectedTask.contingut}</h4>
                       </div>
                       <button 
-                        onClick={() => handleCopy(selectedTask.descripcio || selectedTask.contingut)}
+                        onClick={() => handleCopy(modalContent)}
                         className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all ${
                           copied ? 'bg-emerald-500 text-white' : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-100'
                         }`}
@@ -162,9 +205,11 @@ const DealDetail: React.FC = () => {
                       </button>
                     </div>
                     
-                    <div className="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed font-mono p-4 bg-white dark:bg-slate-950 rounded-xl border border-slate-100 dark:border-slate-900">
-                      {selectedTask.descripcio || selectedTask.contingut || "Sense descripció detallada."}
-                    </div>
+                    <textarea 
+                      value={modalContent}
+                      onChange={(e) => setModalContent(e.target.value)}
+                      className="w-full min-h-[300px] text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed font-mono p-4 bg-white dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 focus:ring-1 focus:ring-indigo-500 outline-none"
+                    />
                     
                     <p className="text-[10px] text-slate-400 mt-4 font-bold uppercase">
                       Programat: {new Date(selectedTask.data).toLocaleString()}
@@ -185,7 +230,7 @@ const DealDetail: React.FC = () => {
                       </span>
                     </div>
                     <button 
-                      onClick={() => handleCopy(selectedInteraction.contingut)}
+                      onClick={() => handleCopy(modalContent)}
                       className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all ${
                         copied ? 'bg-emerald-500 text-white' : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-100'
                       }`}
@@ -195,9 +240,11 @@ const DealDetail: React.FC = () => {
                     </button>
                   </div>
                   
-                  <div className="p-6 bg-white dark:bg-slate-950 rounded-2xl border border-slate-100 dark:border-slate-900 text-sm leading-relaxed text-slate-700 dark:text-slate-300 whitespace-pre-wrap">
-                    {selectedInteraction.contingut}
-                  </div>
+                  <textarea 
+                    value={modalContent}
+                    onChange={(e) => setModalContent(e.target.value)}
+                    className="w-full min-h-[300px] p-6 bg-white dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800 text-sm leading-relaxed text-slate-700 dark:text-slate-300 whitespace-pre-wrap focus:ring-1 focus:ring-indigo-500 outline-none shadow-inner"
+                  />
                 </div>
               )}
             </div>

@@ -165,6 +165,10 @@ class InteraccioCreate(BaseModel):
 class InteraccioUpdate(BaseModel):
     is_completed: bool
 
+class InteraccioFullUpdate(BaseModel):
+    contingut: str
+    metadata_json: Optional[Dict[str, Any]] = None
+
 class AccioCreate(BaseModel):
     tipus: str
     contingut: str
@@ -514,6 +518,23 @@ async def update_interaccio_status(interaccio_id: int, request: InteraccioUpdate
     session.add(interaccio)
     await session.commit()
     return {"status": "ok", "is_completed": interaccio.is_completed}
+
+@app.patch("/interaccions/{interaccio_id}")
+async def update_interaccio_content(interaccio_id: int, request: InteraccioFullUpdate, session: AsyncSession = Depends(get_session)):
+    """Edició completa del contingut d'una interacció o tasca."""
+    stmt = select(Interaccio).where(Interaccio.id == interaccio_id)
+    res = await session.execute(stmt)
+    interaccio = res.scalar_one_or_none()
+    if not interaccio: raise HTTPException(status_code=404, detail="No trobat")
+    
+    interaccio.contingut = request.contingut
+    if request.metadata_json is not None:
+        interaccio.metadata_json = request.metadata_json
+        
+    session.add(interaccio)
+    await session.commit()
+    await session.refresh(interaccio)
+    return interaccio
 
 @app.post("/deals/{deal_id}/accions")
 async def create_deal_accio(deal_id: int, request: AccioCreate, session: AsyncSession = Depends(get_session)):
