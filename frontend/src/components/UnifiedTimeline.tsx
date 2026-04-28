@@ -10,7 +10,11 @@ import {
   Bot
 } from 'lucide-react';
 
-const UnifiedTimeline: React.FC = () => {
+interface UnifiedTimelineProps {
+  onEntryClick?: (entry: any) => void;
+}
+
+const UnifiedTimeline: React.FC<UnifiedTimelineProps> = ({ onEntryClick }) => {
   const { deal, refreshDeal } = useDeal();
   const [content, setContent] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -106,12 +110,16 @@ const UnifiedTimeline: React.FC = () => {
               const autor = metadata.autor || (item.tipus === 'kimi_chat' ? 'Kimi' : 'Sistema');
 
               return (
-                <div key={item.id} className="relative pl-10">
-                  <div className="absolute left-0 top-1 w-8 h-8 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-center z-10 shadow-sm">
+                <div 
+                  key={item.id} 
+                  className="relative pl-10 group cursor-pointer"
+                  onClick={() => onEntryClick && onEntryClick(item)}
+                >
+                  <div className="absolute left-0 top-1 w-8 h-8 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-center z-10 shadow-sm group-hover:border-indigo-500 transition-colors">
                     {getIcon(item.tipus)}
                   </div>
 
-                  <div className="bg-white dark:bg-slate-950 p-4 rounded-xl border border-slate-100 dark:border-slate-900 shadow-sm hover:border-slate-300 dark:hover:border-slate-700 transition-colors">
+                  <div className="bg-white dark:bg-slate-950 p-4 rounded-xl border border-slate-100 dark:border-slate-900 shadow-sm group-hover:border-indigo-300 dark:group-hover:border-indigo-800 transition-all group-hover:shadow-md">
                     <div className="flex justify-between items-center mb-2">
                       <div className="flex items-center gap-2">
                         <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 dark:text-indigo-400">

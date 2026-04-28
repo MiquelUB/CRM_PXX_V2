@@ -11,13 +11,17 @@ import {
   Users, 
   Map, 
   X,
-  FileText
+  FileText,
+  Copy,
+  Check
 } from 'lucide-react';
 
 const DealDetail: React.FC = () => {
   const { deal, isLoading, error } = useDeal();
-  const [activeModal, setActiveModal] = useState<'contacts' | 'municipi' | 'task' | null>(null);
+  const [activeModal, setActiveModal] = useState<'contacts' | 'municipi' | 'task' | 'interaction' | null>(null);
   const [selectedTask, setSelectedTask] = useState<any>(null);
+  const [selectedInteraction, setSelectedInteraction] = useState<any>(null);
+  const [copied, setCopied] = useState(false);
 
   if (isLoading) return <div className="flex items-center justify-center h-screen"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-900"></div></div>;
   if (error) return <div className="p-8 bg-red-50 text-red-600 rounded-xl m-4 font-bold">Error en la càrrega de l'Epicentre.</div>;
@@ -26,6 +30,14 @@ const DealDetail: React.FC = () => {
   const closeModal = () => {
     setActiveModal(null);
     setSelectedTask(null);
+    setSelectedInteraction(null);
+    setCopied(false);
+  };
+
+  const handleCopy = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   return (
@@ -88,7 +100,10 @@ const DealDetail: React.FC = () => {
             <div className="px-2 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
                Diari d'Abord
             </div>
-            <UnifiedTimeline />
+            <UnifiedTimeline onEntryClick={(entry: any) => {
+              setSelectedInteraction(entry);
+              setActiveModal('interaction');
+            }} />
           </section>
         </div>
 
@@ -117,7 +132,8 @@ const DealDetail: React.FC = () => {
               <h3 className="font-black text-xs uppercase tracking-widest">
                 {activeModal === 'contacts' && 'Directori de Contactes'}
                 {activeModal === 'municipi' && 'Dades del Municipi'}
-                {activeModal === 'task' && 'Detall de la Tasca'}
+                {activeModal === 'task' && 'Detall de l\'Acció'}
+                {activeModal === 'interaction' && 'Detall de la Interacció'}
               </h3>
               <button onClick={closeModal} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-900 rounded-xl transition-colors">
                 <X size={20} />
@@ -126,18 +142,62 @@ const DealDetail: React.FC = () => {
             <div className="p-6">
               {activeModal === 'contacts' && <ContactsModule />}
               {activeModal === 'municipi' && <MunicipiDataModule />}
+              
               {activeModal === 'task' && selectedTask && (
-                <div className="space-y-4">
-                  <div className="p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800">
-                    <p className="text-[10px] font-black uppercase text-indigo-600 mb-1">{selectedTask.tipus}</p>
-                    <h4 className="text-xl font-bold">{selectedTask.contingut}</h4>
-                    <p className="text-xs text-slate-500 mt-2">
-                      Programat per: {new Date(selectedTask.data).toLocaleString()}
+                <div className="space-y-6">
+                  <div className="p-6 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800">
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <p className="text-[10px] font-black uppercase text-indigo-600 mb-1">{selectedTask.tipus}</p>
+                        <h4 className="text-xl font-bold">{selectedTask.contingut}</h4>
+                      </div>
+                      <button 
+                        onClick={() => handleCopy(selectedTask.descripcio || selectedTask.contingut)}
+                        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all ${
+                          copied ? 'bg-emerald-500 text-white' : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-100'
+                        }`}
+                      >
+                        {copied ? <Check size={14} /> : <Copy size={14} />}
+                        {copied ? 'Copiat!' : 'Copiar Text'}
+                      </button>
+                    </div>
+                    
+                    <div className="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed font-mono p-4 bg-white dark:bg-slate-950 rounded-xl border border-slate-100 dark:border-slate-900">
+                      {selectedTask.descripcio || selectedTask.contingut || "Sense descripció detallada."}
+                    </div>
+                    
+                    <p className="text-[10px] text-slate-400 mt-4 font-bold uppercase">
+                      Programat: {new Date(selectedTask.data).toLocaleString()}
                     </p>
                   </div>
-                  <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed italic">
-                    Aquí podràs editar els detalls de la tasca en el proper refactor de CRUD d'accions.
-                  </p>
+                </div>
+              )}
+
+              {activeModal === 'interaction' && selectedInteraction && (
+                <div className="space-y-6">
+                  <div className="flex justify-between items-center px-2">
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-1 bg-slate-100 dark:bg-slate-900 rounded text-[9px] font-black uppercase text-slate-500 tracking-widest">
+                        {selectedInteraction.tipus}
+                      </span>
+                      <span className="text-[10px] font-bold text-slate-400">
+                        {new Date(selectedInteraction.data).toLocaleString()}
+                      </span>
+                    </div>
+                    <button 
+                      onClick={() => handleCopy(selectedInteraction.contingut)}
+                      className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all ${
+                        copied ? 'bg-emerald-500 text-white' : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-100'
+                      }`}
+                    >
+                      {copied ? <Check size={14} /> : <Copy size={14} />}
+                      {copied ? 'Copiar' : 'Copiar'}
+                    </button>
+                  </div>
+                  
+                  <div className="p-6 bg-white dark:bg-slate-950 rounded-2xl border border-slate-100 dark:border-slate-900 text-sm leading-relaxed text-slate-700 dark:text-slate-300 whitespace-pre-wrap">
+                    {selectedInteraction.contingut}
+                  </div>
                 </div>
               )}
             </div>
