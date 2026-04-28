@@ -173,9 +173,17 @@ class CalendariEventRead(BaseModel):
 
     model_config = {"from_attributes": True}
 
-# ⚡ Schema LLEUGER per al Kanban: sense relacions pesades.
-# Pydantic no intentarà llegir accions/calendari_events → zero lazy-load.
-class DealKanbanRead(DealRead):
+# ⚡ Schema LLEUGER per al Kanban: Completament aïllat de relacions pesades.
+class DealKanbanRead(SQLModel):
+    id: int
+    municipi_id: int
+    pla_saas: str
+    estat_kanban: EstatDeal
+    proper_pas: Optional[str] = None
+    data_seguiment: Optional[datetime] = None
+    is_active: bool = True
+    
+    # Incloem el municipi bàsic ja que el Kanban el necessita per al títol
     municipi: Optional[MunicipiRead] = None
 
     model_config = {"from_attributes": True}
