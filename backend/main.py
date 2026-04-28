@@ -30,10 +30,12 @@ from contextlib import asynccontextmanager
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Gestió segura del cicle de vida de l'aplicació."""
-    print("Backend V2: Ready (IMAP Disabled)")
-    yield
-    logging.info("Tancant connexions...")
+    """Gestió del cicle de vida de l'aplicació (IMAP Desactivat)."""
+    logging.info("🚀 Backend CRM V2: Iniciant (IMAP Desactivat)")
+    try:
+        yield
+    finally:
+        logging.info("🛑 Backend CRM V2: Aturant...")
 
 app = FastAPI(
     title="CRM PXX v2 - Expert Refactored API",

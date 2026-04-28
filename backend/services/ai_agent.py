@@ -79,9 +79,12 @@ async def build_deal_context_stateless(session: AsyncSession, deal_id: int) -> s
     # TTL: Només agafem l'agenda dels pròxims 60 dies per no saturar el context
     limit_date = datetime.now(timezone.utc) + timedelta(days=60)
     
+    # TTL Context: Només interaccions dels últims 90 dies i límit de 20
+    tres_mesos_enrere = datetime.now(timezone.utc) - timedelta(days=90)
+    
     stmt = select(Deal).where(Deal.id == deal_id).options(
         joinedload(Deal.municipi),
-        selectinload(Deal.accions),
+        selectinload(Deal.accions).where(Interaccio.data >= tres_mesos_enrere),
         selectinload(Deal.calendari_events).where(CalendariEvent.data_inici <= limit_date)
     )
     res = await session.execute(stmt)
