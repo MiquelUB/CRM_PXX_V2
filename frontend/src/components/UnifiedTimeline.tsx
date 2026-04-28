@@ -21,7 +21,6 @@ const UnifiedTimeline: React.FC = () => {
     if (!text.trim() || isSubmitting || !deal) return;
     
     setIsSubmitting(true);
-    setError(null);
     
     try {
       const response = await fetch(`${API_BASE}/interaccions`, {
@@ -44,7 +43,6 @@ const UnifiedTimeline: React.FC = () => {
       setContent('');
     } catch (err) {
       console.error("Fallada al desar la nota:", err);
-      setError("No s'ha pogut desar la nota. Torna-ho a intentar.");
     } finally {
       setIsSubmitting(false);
     }
