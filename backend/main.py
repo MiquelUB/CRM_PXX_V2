@@ -597,30 +597,29 @@ async def get_emails(limit: int = 50, offset: int = 0, session=Depends(get_sessi
 
 # --- CALENDARI (ESDEVENIMENTS) ---
 
-@app.get("/calendar/events", response_model=List[dict])
-async def get_calendar_events_formatted(session=Depends(get_session)):
-    """Retorna els esdeveniments pendents des de la bitàcola centralitzada."""
-    # Tipus que es mostren al calendari
-    tipus_calendar = ["calendar", "trucada", "demo", "reunio", "tasca_programada"]
-    
+@app.get("/calendar/events")
+async def get_calendar_events_formatted(session: AsyncSession = Depends(get_session)):
+    """Retorna els esdeveniments des de la nova taula centralitzada de calendari."""
     statement = (
-        select(Interaccio)
-        .where(Interaccio.is_completed == False)
-        .options(joinedload(Interaccio.deal).joinedload(Deal.municipi))
+        select(CalendariEvent)
+        .where(CalendariEvent.completat == False)
+        .options(
+            selectinload(CalendariEvent.deal).joinedload(Deal.municipi)
+        )
     )
     result = await session.execute(statement)
-    interaccions = result.scalars().all()
+    events_db = result.scalars().all()
     
     events = []
-    for i in interaccions:
-        if i.metadata_json and "data_hora" in i.metadata_json:
-            events.append({
-                "id": i.id,
-                "title": f"{i.contingut} ({i.deal.municipi.nom})",
-                "start": i.metadata_json["data_hora"],
-                "end": i.metadata_json.get("data_hora_fi", i.metadata_json["data_hora"]),
-                "resource": {"deal_id": i.deal_id}
-            })
+    for ev in events_db:
+        # El calendari de React-Big-Calendar espera start/end en format ISO o Date
+        events.append({
+            "id": ev.id,
+            "title": f"{ev.descripcio} ({ev.deal.municipi.nom if ev.deal and ev.deal.municipi else 'Deal'})",
+            "start": ev.data_inici.isoformat(),
+            "end": ev.data_fi.isoformat() if ev.data_fi else ev.data_inici.isoformat(),
+            "resource": {"deal_id": ev.deal_id, "tipus": ev.tipus}
+        })
     return events
 
 # --- AGENT IA (Kimi k2.5) ---
