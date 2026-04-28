@@ -16,8 +16,7 @@ from models import (
 )
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel
-from services.ai_agent import ask_kimi_v4, generate_outbound_email
-from services.imap_service import start_imap_scheduler
+from services.ai_agent import interact_with_kimi_persistent
 from routers.knowledge import router as knowledge_router
 import asyncio
 import traceback
@@ -48,9 +47,6 @@ async def lifespan(app: FastAPI):
                     logging.info("DATA SEED: Context global 'pxx_general' injectat.")
         except Exception as e:
             logging.warning(f"DATA SEED: No s'ha pogut verificar/injectar el context global: {e}")
-
-    # --- INICI ESCORTA PASSIVA IMAP ---
-    asyncio.create_task(start_imap_scheduler())
 
     yield
     logging.info("Tancant connexions...")
