@@ -548,21 +548,26 @@ async def delete_interaccio(interaccio_id: int, session: AsyncSession = Depends(
     await session.commit()
     return {"status": "ok", "message": "Registre eliminat correctament"}
 
-@app.post("/deals/{deal_id}/accions")
+@app.post("/deals/{deal_id}/accions", response_model=CalendariEventRead)
 async def create_deal_accio(deal_id: int, request: AccioCreate, session: AsyncSession = Depends(get_session)):
-    """Programa una nova acció per a un deal."""
-    nou = Interaccio(
+    """Programa una nova tasca/acció vinculada al calendari i al checklist."""
+    # Obtenim el deal per saber el municipi_id
+    stmt = select(Deal).where(Deal.id == deal_id)
+    res = await session.execute(stmt)
+    deal = res.scalar_one_or_none()
+    if not deal: raise HTTPException(status_code=404, detail="Deal no trobat")
+
+    nou = CalendariEvent(
         deal_id=deal_id,
+        municipi_id=deal.municipi_id,
         tipus=request.tipus,
-        contingut=request.contingut,
-        is_completed=False,
-        data=request.data_programada,
-        metadata_json=request.metadata_json or {}
+        descripcio=request.contingut,
+        data_inici=request.data_programada,
+        data_fi=request.data_programada + timedelta(minutes=30),
+        es_tasca=True, # Per defecte les accions manuals són tasques de checklist
+        completat=False
     )
-    # Injectem la data al metadata per compatibilitat amb el calendari actual
-    if "data_hora" not in nou.metadata_json:
-        nou.metadata_json["data_hora"] = request.data_programada.isoformat()
-        
+    
     session.add(nou)
     await session.commit()
     await session.refresh(nou)
@@ -570,16 +575,27 @@ async def create_deal_accio(deal_id: int, request: AccioCreate, session: AsyncSe
 
 @app.patch("/accions/{accio_id}/completar")
 async def completar_accio(accio_id: int, session: AsyncSession = Depends(get_session)):
-    """Marca una acció com a completada."""
-    stmt = select(Interaccio).where(Interaccio.id == accio_id)
+    """Marca una tasca del calendari com a completada i genera un log al timeline."""
+    stmt = select(CalendariEvent).where(CalendariEvent.id == accio_id).options(selectinload(CalendariEvent.deal))
     res = await session.execute(stmt)
-    accio = res.scalar_one_or_none()
-    if not accio: raise HTTPException(status_code=404, detail="Acció no trobada")
+    event = res.scalar_one_or_none()
+    if not event: raise HTTPException(status_code=404, detail="Tasca no trobada")
     
-    accio.is_completed = True
-    session.add(accio)
+    event.completat = True
+    session.add(event)
+
+    # Generem log automàtic al Timeline (Interaccio)
+    log = Interaccio(
+        deal_id=event.deal_id,
+        tipus="system_log",
+        contingut=f"Tasca completada: {event.descripcio}",
+        data=datetime.now(timezone.utc),
+        metadata_json={"action": "task_completed", "event_id": event.id}
+    )
+    session.add(log)
+
     await session.commit()
-    return {"status": "ok"}
+    return {"status": "ok", "message": "Tasca completada i registrada al timeline"}
 
 @app.get("/emails", response_model=List[InteraccioReadWithContext])
 async def get_emails(limit: int = 50, offset: int = 0, session=Depends(get_session)):

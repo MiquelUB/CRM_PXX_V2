@@ -89,6 +89,7 @@ class CalendariEvent(SQLModel, table=True):
     tipus: str = Field(default="seguiment")  # seguiment, demo, reunio, renovacio, general
     descripcio: Optional[str] = Field(default=None)
     completat: bool = Field(default=False)
+    es_tasca: bool = Field(default=False) # True per a Checklist, False per a Calendari pur
 
     # Relacions
     deal: Deal = Relationship(back_populates="calendari_events")
@@ -170,6 +171,7 @@ class CalendariEventRead(BaseModel):
     tipus: str
     descripcio: Optional[str] = None
     completat: bool
+    es_tasca: bool
 
     model_config = {"from_attributes": True}
 
