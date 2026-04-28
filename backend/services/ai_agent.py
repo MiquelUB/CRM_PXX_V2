@@ -31,7 +31,7 @@ AGENT_TOOLS = [
                     "data_inici": {
                         "type": "string",
                         "format": "date-time",
-                        "description": "ISO 8601 (ex: '2026-05-06T10:00:00Z')."
+                        "description": "ISO 8601 (ex: '2026-05-06T10:00:00+02:00'). Usa offset +02:00."
                     },
                     "es_tasca": {
                         "type": "boolean",
@@ -76,10 +76,13 @@ async def call_openrouter_stateless(messages: List[Dict[str, Any]], tools: Optio
 # --- LOGICA DE NEGOCI (CONTEXT + TOOLS) ---
 
 async def build_deal_context_stateless(session: AsyncSession, deal_id: int) -> str:
+    # TTL: Només agafem l'agenda dels pròxims 60 dies per no saturar el context
+    limit_date = datetime.now(timezone.utc) + timedelta(days=60)
+    
     stmt = select(Deal).where(Deal.id == deal_id).options(
         joinedload(Deal.municipi),
         selectinload(Deal.accions),
-        selectinload(Deal.calendari_events)
+        selectinload(Deal.calendari_events).where(CalendariEvent.data_inici <= limit_date)
     )
     res = await session.execute(stmt)
     deal = res.scalar_one_or_none()
@@ -96,9 +99,12 @@ async def build_deal_context_stateless(session: AsyncSession, deal_id: int) -> s
 
     context = f"REALITAT DEL DEAL (ID: {deal.id} - {deal.municipi.nom if deal.municipi else 'Desconegut'}):\n"
     context += f"- Proper pas actual: {deal.proper_pas or 'Cap'}\n"
-    context += "AGENDA PENDENT:\n" + ("\n".join(calendar_lines) if calendar_lines else "Cap.") + "\n\n"
+    context += "AGENDA PENDENT (PRÒXIMS 60 DIES):\n" + ("\n".join(calendar_lines) if calendar_lines else "Cap.") + "\n\n"
     context += "HISTÒRIAL RECENT:\n" + ("\n".join(history_lines) if history_lines else "Cap.") + "\n\n"
-    context += f"DATA ACTUAL: {datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')}"
+    
+    # Timezone Injection: Ajudem l'IA a entendre que som a Espanya (CEST/CET)
+    now_local = datetime.now(timezone.utc) + timedelta(hours=2) # Simplificació per a CEST
+    context += f"DATA ACTUAL LOCAL (Europe/Madrid): {now_local.strftime('%Y-%m-%dT%H:%M:%S+02:00')}"
     return context
 
 async def processar_tool_call_agent(session: AsyncSession, deal_id: int, args: Dict[str, Any]) -> Dict[str, Any]:
@@ -107,19 +113,26 @@ async def processar_tool_call_agent(session: AsyncSession, deal_id: int, args: D
         data_str = args.get("data_inici")
         es_tasca = args.get("es_tasca", False)
         tipus = args.get("tipus", "seguiment")
+        
+        # Parseig segur amb timezone awareness
         dt = datetime.fromisoformat(data_str.replace("Z", "+00:00"))
 
-        # Idempotència (+/- 1h)
+        # IDEMPOTÈNCIA ROBUSTA (Time Window matching):
+        # Ignorem el títol (que pot variar segons l'IA) i mirem deal_id + tipus + finestra de +/- 1h
+        f_inici = dt - timedelta(hours=1)
+        f_fi = dt + timedelta(hours=1)
+        
         dup_stmt = select(CalendariEvent).where(
             CalendariEvent.deal_id == deal_id,
-            CalendariEvent.descripcio == titol,
-            CalendariEvent.data_inici >= dt - timedelta(hours=1),
-            CalendariEvent.data_inici <= dt + timedelta(hours=1)
+            CalendariEvent.tipus == tipus,
+            CalendariEvent.data_inici >= f_inici,
+            CalendariEvent.data_inici <= f_fi,
+            CalendariEvent.completat == False
         )
         if (await session.execute(dup_stmt)).scalar_one_or_none():
-            return {"status": "success", "message": "Ja estava agendat."}
+            return {"status": "success", "message": "Aquesta acció ja està agendada per a aquesta hora (idempotència)."}
 
-        # Actualitzem Deal
+        # Actualitzem Deal (ACID)
         res = await session.execute(select(Deal).where(Deal.id == deal_id))
         deal = res.scalar_one_or_none()
         deal.proper_pas = titol
@@ -133,7 +146,7 @@ async def processar_tool_call_agent(session: AsyncSession, deal_id: int, args: D
         )
         session.add(nou)
         await session.commit()
-        return {"status": "success", "message": f"Agendat: {titol} ({dt.strftime('%d/%m %H:%M')})"}
+        return {"status": "success", "message": f"Agendat correctament: {titol} ({dt.strftime('%d/%m %H:%M')})"}
     except Exception as e:
         await session.rollback()
         return {"status": "error", "message": str(e)}
@@ -145,8 +158,10 @@ async def interact_with_kimi_persistent(session: AsyncSession, deal_id: int, use
     chat_history = await get_chat_history(session, deal_id)
 
     system_prompt = (
-        "Ets Kimi, assistent B2G de PXX. Ajuda a tancar el deal. "
+        "Ets Kimi, assistent B2G de PXX. "
         "Usa SEMPRE 'gestionar_agenda' per a accions futures. "
+        "IMPORTANT: Estem a Espanya (Europe/Madrid). Si l'usuari diu 'demà', calcula la data "
+        "respecte a la DATA ACTUAL LOCAL proporcionada. Retorna dates amb offset +02:00. "
         f"\nCONTEXT:\n{context}"
     )
 
@@ -165,14 +180,22 @@ async def interact_with_kimi_persistent(session: AsyncSession, deal_id: int, use
         for tc in message.get("tool_calls", []):
             if tc["function"]["name"] == "gestionar_agenda":
                 args = json.loads(tc["function"]["arguments"])
-                tool_results.append(await processar_tool_call_agent(session, deal_id, args))
+                result = await processar_tool_call_agent(session, deal_id, args)
+                tool_results.append(result)
         
-        kimi_res = f"✅ {tool_results[0]['message']}" if tool_results else "⚠️ Error"
+        # Feedback loop d'errors: Si el tool falla, informem a Kimi
+        if tool_results and tool_results[0].get("status") == "error":
+            kimi_res = f"⚠️ Ho sento, he tingut un error al guardar l'agenda: {tool_results[0]['message']}"
+            tool_action = "agenda_error"
+        else:
+            kimi_res = f"✅ {tool_results[0]['message']}" if tool_results else "⚠️ No s'ha pogut processar."
+            tool_action = "agenda_created"
+
         await save_kimi_interaction(session, deal_id, "user", user_query)
         await save_kimi_interaction(session, deal_id, "assistant", kimi_res)
-        return {"response": kimi_res, "tool_action": "agenda_created"}
+        return {"response": kimi_res, "tool_action": tool_action}
 
-    kimi_res = message.get("content", "Error")
+    kimi_res = message.get("content", "Error en la comunicació.")
     await save_kimi_interaction(session, deal_id, "user", user_query)
     await save_kimi_interaction(session, deal_id, "assistant", kimi_res)
     return {"response": kimi_res, "tool_action": None}
