@@ -202,7 +202,8 @@ async def get_deal_full(deal_id: int, session: AsyncSession = Depends(get_sessio
     statement = select(Deal).where(Deal.id == deal_id).options(
         joinedload(Deal.municipi),
         selectinload(Deal.contactes),
-        selectinload(Deal.accions)
+        selectinload(Deal.accions),
+        selectinload(Deal.calendari_events)
     )
     result = await session.execute(statement)
     deal = result.scalar_one_or_none()
@@ -220,7 +221,8 @@ async def get_deals(limit: int = 50, offset: int = 0, session=Depends(get_sessio
         .options(
             joinedload(Deal.municipi), 
             selectinload(Deal.contactes),
-            selectinload(Deal.accions)
+            selectinload(Deal.accions),
+            selectinload(Deal.calendari_events)
         )
         .limit(limit)
         .offset(offset)

@@ -165,11 +165,13 @@ class DealReadWithMunicipi(DealRead):
     municipi: Optional[MunicipiRead] = None
     contactes: List[ContacteRead] = []
     accions: List[InteraccioRead] = []
+    calendari_events: List["CalendariEventRead"] = []
 
 class DealKanbanRead(DealRead):
     municipi: Optional[MunicipiRead] = None
     contactes: List[ContacteRead] = []
     accions: List[InteraccioRead] = []
+    calendari_events: List["CalendariEventRead"] = []
 
 class InteraccioReadWithContext(InteraccioRead):
     deal: Optional[DealReadWithMunicipi] = None
