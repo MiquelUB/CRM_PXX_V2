@@ -536,6 +536,19 @@ async def update_interaccio_content(interaccio_id: int, request: InteraccioFullU
     await session.refresh(interaccio)
     return interaccio
 
+@app.delete("/interaccions/{interaccio_id}")
+async def delete_interaccio(interaccio_id: int, session: AsyncSession = Depends(get_session)):
+    """Elimina permanentment una interacció o tasca."""
+    stmt = select(Interaccio).where(Interaccio.id == interaccio_id)
+    res = await session.execute(stmt)
+    interaccio = res.scalar_one_or_none()
+    if not interaccio:
+        raise HTTPException(status_code=404, detail="Registre no trobat")
+    
+    await session.delete(interaccio)
+    await session.commit()
+    return {"status": "ok", "message": "Registre eliminat correctament"}
+
 @app.post("/deals/{deal_id}/accions")
 async def create_deal_accio(deal_id: int, request: AccioCreate, session: AsyncSession = Depends(get_session)):
     """Programa una nova acció per a un deal."""

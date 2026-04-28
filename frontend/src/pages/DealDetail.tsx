@@ -14,7 +14,8 @@ import {
   FileText,
   Copy,
   Check,
-  Loader2
+  Loader2,
+  Trash
 } from 'lucide-react';
 
 const DealDetail: React.FC = () => {
@@ -22,16 +23,21 @@ const DealDetail: React.FC = () => {
   const [activeModal, setActiveModal] = useState<'contacts' | 'municipi' | 'task' | 'interaction' | null>(null);
   const [selectedTask, setSelectedTask] = useState<any>(null);
   const [selectedInteraction, setSelectedInteraction] = useState<any>(null);
+  const [modalTitle, setModalTitle] = useState('');
   const [modalContent, setModalContent] = useState('');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [copied, setCopied] = useState(false);
 
   const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
   useEffect(() => {
     if (selectedTask) {
-      setModalContent(selectedTask.descripcio || selectedTask.contingut || '');
+      setModalTitle(selectedTask.contingut || '');
+      setModalContent(selectedTask.metadata_json?.descripcio || selectedTask.descripcio || '');
     } else if (selectedInteraction) {
+      setModalTitle(selectedInteraction.metadata_json?.titol || '');
       setModalContent(selectedInteraction.contingut || '');
     }
   }, [selectedTask, selectedInteraction]);
@@ -44,7 +50,9 @@ const DealDetail: React.FC = () => {
     setActiveModal(null);
     setSelectedTask(null);
     setSelectedInteraction(null);
+    setModalTitle('');
     setModalContent('');
+    setShowDeleteConfirm(false);
     setCopied(false);
   };
 
@@ -57,10 +65,30 @@ const DealDetail: React.FC = () => {
   const handleUpdateContent = async (id: number) => {
     setIsUpdating(true);
     try {
+      let payload: any = {};
+      
+      if (selectedTask) {
+        payload = {
+          contingut: modalTitle,
+          metadata_json: { 
+            ...(selectedTask.metadata_json || {}),
+            descripcio: modalContent 
+          }
+        };
+      } else {
+        payload = {
+          contingut: modalContent,
+          metadata_json: {
+            ...(selectedInteraction.metadata_json || {}),
+            titol: modalTitle
+          }
+        };
+      }
+
       const response = await fetch(`${API_BASE}/interaccions/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contingut: modalContent })
+        body: JSON.stringify(payload)
       });
       if (response.ok) {
         await refreshDeal();
@@ -70,6 +98,23 @@ const DealDetail: React.FC = () => {
       console.error("Error al guardar els canvis:", err);
     } finally {
       setIsUpdating(false);
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    setIsDeleting(true);
+    try {
+      const response = await fetch(`${API_BASE}/interaccions/${id}`, {
+        method: 'DELETE'
+      });
+      if (response.ok) {
+        await refreshDeal();
+        closeModal();
+      }
+    } catch (err) {
+      console.error("Error al borrar el registre:", err);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -92,7 +137,6 @@ const DealDetail: React.FC = () => {
           </p>
         </div>
         
-        {/* Botons de Dades (Minimalistes) */}
         <div className="flex gap-2">
           <button 
             onClick={() => setActiveModal('contacts')}
@@ -111,13 +155,9 @@ const DealDetail: React.FC = () => {
         </div>
       </header>
 
-      {/* 2. LAYOUT 60/40 (GRID TAILWIND) */}
+      {/* 2. LAYOUT 60/40 */}
       <div className="grid grid-cols-10 gap-8">
-        
-        {/* COLUMNA ESQUERRA: L'ACCIÓ (60%) */}
         <div className="col-span-10 lg:col-span-6 space-y-8">
-          
-          {/* Properes Accions (Checklist) */}
           <section className="space-y-3">
             <div className="px-2 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
               <FileText size={12} /> Llista d'Execució
@@ -128,7 +168,6 @@ const DealDetail: React.FC = () => {
             }} />
           </section>
 
-          {/* Diari d'Abord (Timeline) */}
           <section className="space-y-3">
             <div className="px-2 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
                Diari d'Abord
@@ -140,16 +179,12 @@ const DealDetail: React.FC = () => {
           </section>
         </div>
 
-        {/* COLUMNA DRETA: L'ESTRATÈGIA (40%) */}
         <div className="col-span-10 lg:col-span-4 space-y-8">
           <KimiChatIntegrated />
-          
-          {/* SaaS Plan (Configuració ràpida) */}
           <SaaSPlanModule />
         </div>
       </div>
 
-      {/* 3. CONTEXT LOCAL IA (AL FONS) */}
       <div className="pt-12 border-t border-slate-100 dark:border-slate-900">
         <div className="max-w-2xl mx-auto opacity-50 hover:opacity-100 transition-opacity">
           <MunicipalityContextModule />
@@ -169,7 +204,7 @@ const DealDetail: React.FC = () => {
                 {activeModal === 'interaction' && 'Edició del Diari'}
               </h3>
               <div className="flex items-center gap-2">
-                {(activeModal === 'task' || activeModal === 'interaction') && (
+                {(activeModal === 'task' || activeModal === 'interaction') && !showDeleteConfirm && (
                   <button 
                     onClick={() => handleUpdateContent(selectedTask?.id || selectedInteraction?.id)}
                     disabled={isUpdating}
@@ -183,76 +218,94 @@ const DealDetail: React.FC = () => {
                 </button>
               </div>
             </div>
+            
             <div className="p-6">
               {activeModal === 'contacts' && <ContactsModule />}
               {activeModal === 'municipi' && <MunicipiDataModule />}
               
-              {activeModal === 'task' && selectedTask && (
+              {(activeModal === 'task' || activeModal === 'interaction') && (
                 <div className="space-y-6">
-                  <div className="p-6 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800">
-                    <div className="flex justify-between items-start mb-4">
-                      <div>
-                        <p className="text-[10px] font-black uppercase text-indigo-600 mb-1">{selectedTask.tipus}</p>
-                        <h4 className="text-xl font-bold">{selectedTask.contingut}</h4>
+                  {showDeleteConfirm ? (
+                    <div className="p-8 bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/30 rounded-2xl text-center space-y-4 animate-in fade-in zoom-in-95">
+                      <div className="w-12 h-12 bg-red-100 dark:bg-red-900/30 text-red-600 rounded-full flex items-center justify-center mx-auto">
+                        <Trash size={24} />
                       </div>
-                      <button 
-                        onClick={() => handleCopy(modalContent)}
-                        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all ${
-                          copied ? 'bg-emerald-500 text-white' : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-100'
-                        }`}
-                      >
-                        {copied ? <Check size={14} /> : <Copy size={14} />}
-                        {copied ? 'Copiat!' : 'Copiar Text'}
-                      </button>
+                      <div>
+                        <h4 className="text-sm font-black uppercase text-red-600 tracking-widest">Confirmar Eliminació</h4>
+                        <p className="text-xs text-red-700 dark:text-red-400 mt-1">Aquesta acció és permanent i no es pot desfer.</p>
+                      </div>
+                      <div className="flex justify-center gap-3 pt-2">
+                        <button 
+                          onClick={() => setShowDeleteConfirm(false)}
+                          className="px-4 py-2 text-[10px] font-black uppercase text-slate-500 hover:text-slate-700"
+                        >
+                          Cancel·lar
+                        </button>
+                        <button 
+                          onClick={() => handleDelete(selectedTask?.id || selectedInteraction?.id)}
+                          disabled={isDeleting}
+                          className="px-6 py-2 bg-red-600 text-white rounded-xl text-[10px] font-black uppercase hover:bg-red-700 transition-all disabled:opacity-50 flex items-center gap-2"
+                        >
+                          {isDeleting && <Loader2 size={12} className="animate-spin" />}
+                          Eliminar Registre
+                        </button>
+                      </div>
                     </div>
-                    
-                    <textarea 
-                      value={modalContent}
-                      onChange={(e) => setModalContent(e.target.value)}
-                      className="w-full min-h-[300px] text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed font-mono p-4 bg-white dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 focus:ring-1 focus:ring-indigo-500 outline-none"
-                    />
-                    
-                    <p className="text-[10px] text-slate-400 mt-4 font-bold uppercase">
-                      Programat: {new Date(selectedTask.data).toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-              )}
+                  ) : (
+                    <div className="space-y-4">
+                      {/* Títol de l'entrada */}
+                      <div className="space-y-1.5">
+                        <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest ml-1">Títol del registre</label>
+                        <input 
+                          type="text"
+                          value={modalTitle}
+                          onChange={(e) => setModalTitle(e.target.value)}
+                          placeholder="Títol o resum..."
+                          className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:ring-1 focus:ring-indigo-500 transition-all"
+                        />
+                      </div>
 
-              {activeModal === 'interaction' && selectedInteraction && (
-                <div className="space-y-6">
-                  <div className="flex justify-between items-center px-2">
-                    <div className="flex items-center gap-2">
-                      <span className="px-2 py-1 bg-slate-100 dark:bg-slate-900 rounded text-[9px] font-black uppercase text-slate-500 tracking-widest">
-                        {selectedInteraction.tipus}
-                      </span>
-                      <span className="text-[10px] font-bold text-slate-400">
-                        {new Date(selectedInteraction.data).toLocaleString()}
-                      </span>
+                      {/* Contingut/Descripció */}
+                      <div className="space-y-1.5">
+                        <div className="flex justify-between items-center ml-1">
+                          <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Cos del registre / Descripció</label>
+                          <button 
+                            onClick={() => handleCopy(modalContent)}
+                            className="text-[9px] font-bold uppercase text-indigo-600 hover:underline flex items-center gap-1"
+                          >
+                            {copied ? <Check size={10} /> : <Copy size={10} />}
+                            {copied ? 'Copiat' : 'Copiar'}
+                          </button>
+                        </div>
+                        <textarea 
+                          value={modalContent}
+                          onChange={(e) => setModalContent(e.target.value)}
+                          placeholder="Escriu els detalls aquí..."
+                          className="w-full min-h-[300px] bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-4 text-sm leading-relaxed outline-none focus:ring-1 focus:ring-indigo-500 transition-all resize-none shadow-inner"
+                        />
+                      </div>
+
+                      {/* Botó de Borrar (al fons) */}
+                      <div className="pt-4 border-t border-slate-100 dark:border-slate-900 flex justify-between items-center">
+                        <p className="text-[9px] text-slate-400 font-bold uppercase italic">
+                          Tipus: {selectedTask?.tipus || selectedInteraction?.tipus} | {new Date(selectedTask?.data || selectedInteraction?.data).toLocaleString()}
+                        </p>
+                        <button 
+                          onClick={() => setShowDeleteConfirm(true)}
+                          className="flex items-center gap-2 px-3 py-1.5 text-red-500 hover:text-red-700 text-[10px] font-black uppercase transition-colors"
+                        >
+                          <Trash size={14} />
+                          Borrar Registre
+                        </button>
+                      </div>
                     </div>
-                    <button 
-                      onClick={() => handleCopy(modalContent)}
-                      className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all ${
-                        copied ? 'bg-emerald-500 text-white' : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-100'
-                      }`}
-                    >
-                      {copied ? <Check size={14} /> : <Copy size={14} />}
-                      {copied ? 'Copiar' : 'Copiar'}
-                    </button>
-                  </div>
-                  
-                  <textarea 
-                    value={modalContent}
-                    onChange={(e) => setModalContent(e.target.value)}
-                    className="w-full min-h-[300px] p-6 bg-white dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800 text-sm leading-relaxed text-slate-700 dark:text-slate-300 whitespace-pre-wrap focus:ring-1 focus:ring-indigo-500 outline-none shadow-inner"
-                  />
+                  )}
                 </div>
               )}
             </div>
           </div>
         </div>
       )}
-
     </div>
   );
 };
