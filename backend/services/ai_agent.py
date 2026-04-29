@@ -84,8 +84,8 @@ async def build_deal_context_stateless(session: AsyncSession, deal_id: int) -> s
     
     stmt = select(Deal).where(Deal.id == deal_id).options(
         joinedload(Deal.municipi),
-        selectinload(Deal.accions).where(Interaccio.data >= tres_mesos_enrere),
-        selectinload(Deal.calendari_events).where(CalendariEvent.data_inici <= limit_date)
+        selectinload(Deal.accions.and_(Interaccio.data >= tres_mesos_enrere)),
+        selectinload(Deal.calendari_events.and_(CalendariEvent.data_inici <= limit_date))
     )
     res = await session.execute(stmt)
     deal = res.scalar_one_or_none()
