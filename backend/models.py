@@ -162,6 +162,9 @@ class InteraccioRead(BaseModel):
 class MunicipiReadWithDeals(MunicipiRead):
     deals: List[DealRead] = []
 
+class ContacteReadWithMunicipi(ContacteRead):
+    municipi: Optional[MunicipiRead] = None
+
 class CalendariEventRead(BaseModel):
     id: int
     deal_id: int

@@ -11,14 +11,13 @@ const fetcher = (url: string) => fetch(url).then(res => {
 const Contactes: React.FC = () => {
   const { data: contactes, mutate } = useSWR(`${API_BASE}/contactes`, fetcher);
   const { data: municipis } = useSWR(`${API_BASE}/municipis`, fetcher);
+  const [search, setSearch] = React.useState('');
   const [isModalOpen, setIsModalOpen] = React.useState(false);
-  const [editingContact, setEditingContact] = React.useState<any>(null);
   const [formData, setFormData] = React.useState({ nom: '', email: '', telefon: '', carrec: '', municipi_id: '' });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const method = editingContact ? 'PUT' : 'POST';
-    const url = editingContact ? `${API_BASE}/contactes/${editingContact.id}` : `${API_BASE}/contactes`;
+    const url = `${API_BASE}/contactes`;
     
     const payload = {
       nom: formData.nom,
@@ -29,48 +28,36 @@ const Contactes: React.FC = () => {
     };
     
     await fetch(url, {
-      method,
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
 
     setIsModalOpen(false);
-    setEditingContact(null);
     setFormData({ nom: '', email: '', telefon: '', carrec: '', municipi_id: '' });
     mutate();
   };
 
-  const handleEdit = (c: any) => {
-    setEditingContact(c);
-    setFormData({ 
-      nom: c.nom, 
-      email: c.email, 
-      telefon: c.telefon || '', 
-      carrec: c.carrec || '', 
-      municipi_id: c.municipi_id || '' 
-    });
-    setIsModalOpen(true);
-  };
-
-  const handleDelete = async (id: number) => {
-    if (confirm("Segur que vols eliminar aquest contacte?")) {
-      await fetch(`${API_BASE}/contactes/${id}`, { method: 'DELETE' });
-      mutate();
-    }
-  };
-
-  console.log("AGENDA CARREGADA. Contactes:", contactes);
+  const filteredContactes = React.useMemo(() => {
+    if (!Array.isArray(contactes)) return [];
+    const q = search.toLowerCase();
+    return contactes.filter((c: any) => 
+      c.nom.toLowerCase().includes(q) ||
+      (c.carrec?.toLowerCase().includes(q)) ||
+      c.email.toLowerCase().includes(q) ||
+      (c.municipi?.nom?.toLowerCase().includes(q))
+    );
+  }, [contactes, search]);
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Agenda de Contactes</h1>
-          <p className="text-slate-500 text-sm">Gestiona els responsables municipals vinculats a cada projecte.</p>
+          <p className="text-slate-500 text-sm">Responsables municipals i contactes clau dels projectes.</p>
         </div>
         <button 
           onClick={() => {
-            setEditingContact(null);
             setFormData({ nom: '', email: '', telefon: '', carrec: '', municipi_id: '' });
             setIsModalOpen(true);
           }}
@@ -81,11 +68,25 @@ const Contactes: React.FC = () => {
         </button>
       </div>
 
+      {/* Buscador */}
+      <div className="bg-white dark:bg-slate-950 p-2 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center gap-3 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500 transition-all">
+        <div className="pl-3 text-slate-400">
+          <User size={18} />
+        </div>
+        <input 
+          type="text" 
+          placeholder="Cerca per nom, càrrec, municipi o correu..." 
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="w-full bg-transparent border-none outline-none text-slate-900 dark:text-white py-2"
+        />
+      </div>
+
       {isModalOpen && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 w-full max-w-md shadow-2xl animate-in zoom-in-95 duration-200">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-black">{editingContact ? 'Editar Contacte' : 'Afegir Nou Contacte'}</h2>
+              <h2 className="text-xl font-black">Afegir Nou Contacte</h2>
               <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
             </div>
             
@@ -126,38 +127,59 @@ const Contactes: React.FC = () => {
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {Array.isArray(contactes) ? contactes.map((c: any) => (
-          <div key={c.id} className="bg-white dark:bg-slate-950 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all group relative">
-            <div className="flex items-start justify-between mb-4">
-              <div className="p-3 bg-slate-50 dark:bg-slate-900 rounded-xl text-indigo-600 dark:text-indigo-400 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
-                <User size={24} />
-              </div>
-              <div className="flex items-center gap-1 text-[10px] font-black bg-slate-100 dark:bg-slate-900 px-2 py-1 rounded text-slate-500 uppercase tracking-tighter">
-                <MapPin size={10} />
-                {c.municipi?.nom || 'Sense municipi'}
-              </div>
-            </div>
-            <h3 className="text-lg font-bold text-slate-900 dark:text-white leading-tight mb-1">{c.nom}</h3>
-            <p className="text-sm text-indigo-600 dark:text-indigo-400 font-medium mb-4">{c.carrec || 'Càrrec no definit'}</p>
-            <div className="space-y-2 pt-4 border-t border-slate-50 dark:border-slate-900 text-sm">
-              <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400 truncate">
-                <Mail size={14} className="text-slate-400 flex-shrink-0" />
-                <span className="truncate">{c.email}</span>
-              </div>
-              {c.telefon && (
-                <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
-                  <Phone size={14} className="text-slate-400 flex-shrink-0" />
-                  <span>{c.telefon}</span>
-                </div>
-              )}
-            </div>
-            <div className="mt-4 pt-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-              <button onClick={() => handleEdit(c)} className="text-xs font-bold text-slate-500 hover:text-indigo-600">Editar</button>
-              <button onClick={() => handleDelete(c.id)} className="text-xs font-bold text-slate-500 hover:text-rose-600">Eliminar</button>
-            </div>
+      {/* Llista en format Taula / Single Line */}
+      <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm">
+        <table className="w-full text-left border-collapse">
+          <thead>
+            <tr className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-800">
+              <th className="px-6 py-4 text-xs font-black uppercase text-slate-400 tracking-wider">Nom i Cognoms</th>
+              <th className="px-6 py-4 text-xs font-black uppercase text-slate-400 tracking-wider">Càrrec</th>
+              <th className="px-6 py-4 text-xs font-black uppercase text-slate-400 tracking-wider">Municipi</th>
+              <th className="px-6 py-4 text-xs font-black uppercase text-slate-400 tracking-wider">Correu electrònic</th>
+              <th className="px-6 py-4 text-xs font-black uppercase text-slate-400 tracking-wider">Telèfon</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-900">
+            {filteredContactes.map((c: any) => (
+              <tr key={c.id} className="hover:bg-slate-50 dark:hover:bg-indigo-950/20 transition-colors group">
+                <td className="px-6 py-4">
+                  <div className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <User size={16} className="text-slate-400 group-hover:text-indigo-600 transition-colors" />
+                    {c.nom}
+                  </div>
+                </td>
+                <td className="px-6 py-4">
+                  <div className="text-indigo-600 dark:text-indigo-400 font-medium text-sm">{c.carrec || '—'}</div>
+                </td>
+                <td className="px-6 py-4">
+                  <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400 text-sm">
+                    <MapPin size={14} className="text-slate-300" />
+                    {c.municipi?.nom || '—'}
+                  </div>
+                </td>
+                <td className="px-6 py-4">
+                  <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400 text-sm truncate max-w-[200px]">
+                    <Mail size={14} className="text-slate-300" />
+                    {c.email}
+                  </div>
+                </td>
+                <td className="px-6 py-4 text-slate-600 dark:text-slate-400 text-sm">
+                  {c.telefon ? (
+                    <div className="flex items-center gap-2">
+                      <Phone size={14} className="text-slate-300" />
+                      {c.telefon}
+                    </div>
+                  ) : '—'}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {filteredContactes.length === 0 && (
+          <div className="p-12 text-center text-slate-500">
+            No s'han trobat contactes amb aquests criteris.
           </div>
-        )) : null}
+        )}
       </div>
     </div>
   );

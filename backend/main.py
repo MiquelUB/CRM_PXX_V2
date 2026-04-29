@@ -12,7 +12,8 @@ from models import (
     Deal, Municipi, Interaccio, Contacte, EstatDeal, OnboardingRequest,
     MunicipiRead, DealRead, ContacteRead, InteraccioRead,
     MunicipiReadWithDeals, DealReadWithMunicipi, InteraccioReadWithContext,
-    DealKanbanRead, GlobalKnowledge, DealUpdate, CalendariEvent, CalendariEventRead
+    DealKanbanRead, GlobalKnowledge, DealUpdate, CalendariEvent, CalendariEventRead,
+    ContacteReadWithMunicipi
 )
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel
@@ -359,10 +360,10 @@ app.include_router(knowledge_router, prefix="/api")
 
 # --- CONTACTES ---
 
-@app.get("/contactes", response_model=List[ContacteRead])
+@app.get("/contactes", response_model=List[ContacteReadWithMunicipi])
 async def get_contactes(limit: int = 50, offset: int = 0, session=Depends(get_session)):
-    """Llistat de contactes amb paginació."""
-    statement = select(Contacte).limit(limit).offset(offset)
+    """Llistat de contactes amb municipi carregat."""
+    statement = select(Contacte).options(selectinload(Contacte.municipi)).limit(limit).offset(offset)
     result = await session.execute(statement)
     return result.scalars().all()
 
