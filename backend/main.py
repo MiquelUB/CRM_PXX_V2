@@ -280,14 +280,14 @@ async def get_agent_history(deal_id: int, session: AsyncSession = Depends(get_se
 @app.post("/agent/deals/{deal_id}/ask")
 async def ask_agent(deal_id: int, request: Dict[str, str], session: AsyncSession = Depends(get_session)):
     """Endpoint principal de l'agent Kimi (Persistent)."""
-    from services.ai_agent import ask_kimi_v4
+    from services.ai_agent import interact_with_kimi_persistent
     query = request.get("query")
     if not query:
         raise HTTPException(status_code=400, detail="Query is required")
     
     # Utilitzem la versió persistent que guarda a la DB
-    response = await ask_kimi_v4(session, deal_id, "chat", query)
-    return {"response": response}
+    result = await interact_with_kimi_persistent(session, deal_id, query)
+    return result
 
 @app.patch("/deals/{deal_id}/estat")
 async def update_deal_estat(deal_id: int, request: DealStatusUpdate, session: AsyncSession = Depends(get_session)):
