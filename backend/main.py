@@ -164,34 +164,6 @@ class AccioCreate(BaseModel):
     data_programada: datetime
     metadata_json: Optional[Dict[str, Any]] = None
 
-# --- EMERGENCY REPAIR ENDPOINT ---
-@app.get("/api/emergency-repair-db")
-async def emergency_repair_db():
-    from database import engine
-    try:
-        async with engine.begin() as conn:
-            # 1. Columnes Deal
-            await conn.execute(text("ALTER TABLE deal ADD COLUMN IF NOT EXISTS proper_pas VARCHAR;"))
-            await conn.execute(text("ALTER TABLE deal ADD COLUMN IF NOT EXISTS data_seguiment TIMESTAMP;"))
-            
-            # 2. Taula Calendari
-            await conn.execute(text("""
-            CREATE TABLE IF NOT EXISTS calendari_event (
-                id SERIAL PRIMARY KEY,
-                deal_id INTEGER REFERENCES deal(id),
-                municipi_id INTEGER,
-                data_inici TIMESTAMP,
-                data_fi TIMESTAMP,
-                tipus VARCHAR,
-                descripcio TEXT,
-                completat BOOLEAN DEFAULT FALSE,
-                es_tasca BOOLEAN DEFAULT FALSE
-            );
-            """))
-        return {"status": "SUCCESS", "message": "DB d'EasyPanel reparada!"}
-    except Exception as e:
-        return {"status": "ERROR", "message": str(e)}
-
 # --- DEALS (PROJECTES) ---
 
 @app.get("/deals/kanban", response_model=List[DealKanbanRead])
