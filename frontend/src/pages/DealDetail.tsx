@@ -34,8 +34,8 @@ const DealDetail: React.FC = () => {
 
   useEffect(() => {
     if (selectedTask) {
-      setModalTitle(selectedTask.contingut || '');
-      setModalContent(selectedTask.metadata_json?.descripcio || selectedTask.descripcio || '');
+      setModalTitle(selectedTask.descripcio || '');
+      setModalContent('');
     } else if (selectedInteraction) {
       setModalTitle(selectedInteraction.metadata_json?.titol || '');
       setModalContent(selectedInteraction.contingut || '');
@@ -66,16 +66,15 @@ const DealDetail: React.FC = () => {
     setIsUpdating(true);
     try {
       let payload: any = {};
+      let url = "";
       
       if (selectedTask) {
+        url = `${API_BASE}/accions/${id}`;
         payload = {
-          contingut: modalTitle,
-          metadata_json: { 
-            ...(selectedTask.metadata_json || {}),
-            descripcio: modalContent 
-          }
+          descripcio: modalTitle
         };
       } else {
+        url = `${API_BASE}/interaccions/${id}`;
         payload = {
           contingut: modalContent,
           metadata_json: {
@@ -85,7 +84,7 @@ const DealDetail: React.FC = () => {
         };
       }
 
-      const response = await fetch(`${API_BASE}/interaccions/${id}`, {
+      const response = await fetch(url, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -104,7 +103,10 @@ const DealDetail: React.FC = () => {
   const handleDelete = async (id: number) => {
     setIsDeleting(true);
     try {
-      const response = await fetch(`${API_BASE}/interaccions/${id}`, {
+      const url = selectedTask 
+        ? `${API_BASE}/accions/${id}` 
+        : `${API_BASE}/interaccions/${id}`;
+      const response = await fetch(url, {
         method: 'DELETE'
       });
       if (response.ok) {
@@ -255,40 +257,44 @@ const DealDetail: React.FC = () => {
                     <div className="space-y-4">
                       {/* Títol de l'entrada */}
                       <div className="space-y-1.5">
-                        <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest ml-1">Títol del registre</label>
+                        <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest ml-1">
+                          {selectedTask ? "Descripció de l'acció" : "Títol del registre"}
+                        </label>
                         <input 
                           type="text"
                           value={modalTitle}
                           onChange={(e) => setModalTitle(e.target.value)}
-                          placeholder="Títol o resum..."
+                          placeholder={selectedTask ? "Ex: Trucar al batlle..." : "Títol o resum..."}
                           className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:ring-1 focus:ring-indigo-500 transition-all"
                         />
                       </div>
 
-                      {/* Contingut/Descripció */}
-                      <div className="space-y-1.5">
-                        <div className="flex justify-between items-center ml-1">
-                          <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Cos del registre / Descripció</label>
-                          <button 
-                            onClick={() => handleCopy(modalContent)}
-                            className="text-[9px] font-bold uppercase text-indigo-600 hover:underline flex items-center gap-1"
-                          >
-                            {copied ? <Check size={10} /> : <Copy size={10} />}
-                            {copied ? 'Copiat' : 'Copiar'}
-                          </button>
+                      {/* Contingut/Descripció (Només per a interaccions) */}
+                      {!selectedTask && (
+                        <div className="space-y-1.5">
+                          <div className="flex justify-between items-center ml-1">
+                            <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Cos del registre / Descripció</label>
+                            <button 
+                              onClick={() => handleCopy(modalContent)}
+                              className="text-[9px] font-bold uppercase text-indigo-600 hover:underline flex items-center gap-1"
+                            >
+                              {copied ? <Check size={10} /> : <Copy size={10} />}
+                              {copied ? 'Copiat' : 'Copiar'}
+                            </button>
+                          </div>
+                          <textarea 
+                            value={modalContent}
+                            onChange={(e) => setModalContent(e.target.value)}
+                            placeholder="Escriu els detalls aquí..."
+                            className="w-full min-h-[300px] bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-4 text-sm leading-relaxed outline-none focus:ring-1 focus:ring-indigo-500 transition-all resize-none shadow-inner"
+                          />
                         </div>
-                        <textarea 
-                          value={modalContent}
-                          onChange={(e) => setModalContent(e.target.value)}
-                          placeholder="Escriu els detalls aquí..."
-                          className="w-full min-h-[300px] bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-4 text-sm leading-relaxed outline-none focus:ring-1 focus:ring-indigo-500 transition-all resize-none shadow-inner"
-                        />
-                      </div>
+                      )}
 
                       {/* Botó de Borrar (al fons) */}
                       <div className="pt-4 border-t border-slate-100 dark:border-slate-900 flex justify-between items-center">
                         <p className="text-[9px] text-slate-400 font-bold uppercase italic">
-                          Tipus: {selectedTask?.tipus || selectedInteraction?.tipus} | {new Date(selectedTask?.data || selectedInteraction?.data).toLocaleString()}
+                          Tipus: {selectedTask?.tipus || selectedInteraction?.tipus} | {new Date(selectedTask?.data_inici || selectedInteraction?.data).toLocaleString()}
                         </p>
                         <button 
                           onClick={() => setShowDeleteConfirm(true)}

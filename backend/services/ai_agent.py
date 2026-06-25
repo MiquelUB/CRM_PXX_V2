@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime, timezone, timedelta
 from typing import Optional, Dict, List, Any
 
-from models import Deal, Interaccio, GlobalKnowledge, CalendariEvent
+from models import Deal, Interaccio, GlobalKnowledge, CalendariEvent, EstatDeal
 
 # --- DEFINICIÓ DE TOOLS PER AL LLM (Function Calling) ---
 
@@ -75,6 +75,18 @@ async def call_openrouter_stateless(messages: List[Dict[str, Any]], tools: Optio
 
 # --- LOGICA DE NEGOCI (CONTEXT + TOOLS) ---
 
+def get_system_prompt_template() -> str:
+    """Carrega el contingut del prompt original a partir dels fitxers disponibles."""
+    path_relative = os.path.join(os.path.dirname(os.path.dirname(__file__)), "KIMI_K2_SYSTEM_PROMPT.md")
+    path_root = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "KIMI_K2_SYSTEM_PROMPT.md")
+    
+    for path in [path_relative, path_root]:
+        if os.path.exists(path):
+            with open(path, "r", encoding="utf-8") as f:
+                return f.read()
+                
+    raise FileNotFoundError("No s'ha trobat el fitxer KIMI_K2_SYSTEM_PROMPT.md en cap dels camins possibles.")
+
 async def build_deal_context_stateless(session: AsyncSession, deal_id: int) -> str:
     # TTL: Només agafem l'agenda dels pròxims 60 dies per no saturar el context
     limit_date = datetime.now(timezone.utc) + timedelta(days=60)
@@ -84,6 +96,7 @@ async def build_deal_context_stateless(session: AsyncSession, deal_id: int) -> s
     
     stmt = select(Deal).where(Deal.id == deal_id).options(
         joinedload(Deal.municipi),
+        selectinload(Deal.contactes),
         selectinload(Deal.accions.and_(Interaccio.data >= tres_mesos_enrere)),
         selectinload(Deal.calendari_events.and_(CalendariEvent.data_inici <= limit_date))
     )
@@ -91,23 +104,66 @@ async def build_deal_context_stateless(session: AsyncSession, deal_id: int) -> s
     deal = res.scalar_one_or_none()
     if not deal: return "Deal no trobat."
 
-    # Historial i Agenda
-    history = sorted([a for a in deal.accions if a.tipus != "kimi_chat"], key=lambda x: x.data)
-    history_lines = [f"[{i.data.strftime('%d/%m %H:%M')}] {i.tipus}: {i.contingut[:100]}" for i in history[-10:]]
+    # Variables individuals
+    nom = deal.municipi.nom if deal.municipi else "Desconegut"
+    poblacio = str(deal.municipi.poblacio) if (deal.municipi and deal.municipi.poblacio is not None) else "Desconeguda"
+    etapa_actual = deal.estat_kanban.value if deal.estat_kanban else "Nou"
     
+    # Heurística de temperatura basada en l'etapa Kanban
+    if deal.estat_kanban == EstatDeal.NOU:
+        temperatura = "Baixa"
+    elif deal.estat_kanban in (EstatDeal.CONTACTAT, EstatDeal.DEMO):
+        temperatura = "Mitjana"
+    elif deal.estat_kanban == EstatDeal.PROPOSTA:
+        temperatura = "Alta"
+    elif deal.estat_kanban == EstatDeal.TANCAT:
+        temperatura = "Tancat"
+    else:
+        temperatura = "Mitjana"
+        
+    angle_personalitzacio = deal.municipality_context or "Cap angle especificat."
+    
+    # Format d'Actors OSINT (Contactes)
+    actors_list = []
+    for contact in deal.contactes:
+        carrec_str = f" ({contact.carrec})" if contact.carrec else ""
+        tel_str = f", Tel: {contact.telefon}" if contact.telefon else ""
+        actors_list.append(f"{contact.nom}{carrec_str}, Email: {contact.email}{tel_str}")
+    actors = "\n  ".join(actors_list) if actors_list else "Cap contacte registrat."
+    
+    # Historial d'Interaccions recent
+    history = sorted([a for a in deal.accions if a.tipus != "kimi_chat"], key=lambda x: x.data)
+    history_lines = [f"[{i.data.strftime('%d/%m/%Y %H:%M')}] {i.tipus}: {i.contingut[:150]}" for i in history[-20:]]
+    historial = "\n  ".join(history_lines) if history_lines else "Cap interacció registrada."
+    
+    # Deal actiu amb l'agenda i data actual
+    now_local = datetime.now(timezone.utc) + timedelta(hours=2) # CEST local simplificat
     calendar_lines = [
-        f"- {'TASCA' if ev.es_tasca else 'EVENT'}: {ev.descripcio} ({ev.data_inici.strftime('%d/%m %H:%M')})"
+        f"{'TASCA' if ev.es_tasca else 'EVENT'}: {ev.descripcio} ({ev.data_inici.strftime('%d/%m %H:%M')})"
         for ev in deal.calendari_events if not ev.completat
     ]
-
-    context = f"REALITAT DEL DEAL (ID: {deal.id} - {deal.municipi.nom if deal.municipi else 'Desconegut'}):\n"
-    context += f"- Proper pas actual: {deal.proper_pas or 'Cap'}\n"
-    context += "AGENDA PENDENT (PRÒXIMS 60 DIES):\n" + ("\n".join(calendar_lines) if calendar_lines else "Cap.") + "\n\n"
-    context += "HISTÒRIAL RECENT:\n" + ("\n".join(history_lines) if history_lines else "Cap.") + "\n\n"
+    agenda_pendent = ", ".join(calendar_lines) if calendar_lines else "Cap."
     
-    # Timezone Injection: Ajudem l'IA a entendre que som a Espanya (CEST/CET)
-    now_local = datetime.now(timezone.utc) + timedelta(hours=2) # Simplificació per a CEST
-    context += f"DATA ACTUAL LOCAL (Europe/Madrid): {now_local.strftime('%Y-%m-%dT%H:%M:%S+02:00')}"
+    deal_str = (
+        f"ID: {deal.id}, Pla SaaS: {deal.pla_saas}, "
+        f"Data Creació: {deal.data_creacio.strftime('%d/%m/%Y')}, "
+        f"Proper pas: {deal.proper_pas or 'Cap'}, "
+        f"Agenda pendent: {agenda_pendent}, "
+        f"DATA ACTUAL LOCAL (Europe/Madrid): {now_local.strftime('%Y-%m-%dT%H:%M:%S+02:00')}"
+    )
+
+    context = (
+        f"<CONTEXT_MUNICIPAL>\n"
+        f"  Municipi: {nom}\n"
+        f"  Població: {poblacio}\n"
+        f"  Etapa Funnel: {etapa_actual}\n"
+        f"  Temperatura: {temperatura}\n"
+        f"  Angle Personalització: {angle_personalitzacio}\n"
+        f"  Actors OSINT: {actors}\n"
+        f"  Historial Interaccions: {historial}\n"
+        f"  Deal actiu: {deal_str}\n"
+        f"</CONTEXT_MUNICIPAL>"
+    )
     return context
 
 async def processar_tool_call_agent(session: AsyncSession, deal_id: int, args: Dict[str, Any]) -> Dict[str, Any]:
@@ -160,16 +216,26 @@ async def processar_tool_call_agent(session: AsyncSession, deal_id: int, args: D
 # --- INTERACT PERSISTENT ---
 
 async def interact_with_kimi_persistent(session: AsyncSession, deal_id: int, user_query: str) -> Dict[str, Any]:
-    context = await build_deal_context_stateless(session, deal_id)
-    chat_history = await get_chat_history(session, deal_id)
+    try:
+        template = get_system_prompt_template()
+    except FileNotFoundError as e:
+        return {"response": f"⚠️ Error de configuració de l'agent: {str(e)}", "tool_action": None}
 
-    system_prompt = (
-        "Ets Kimi, assistent B2G de PXX. "
-        "Usa SEMPRE 'gestionar_agenda' per a accions futures. "
-        "IMPORTANT: Estem a Espanya (Europe/Madrid). Si l'usuari diu 'demà', calcula la data "
-        "respecte a la DATA ACTUAL LOCAL proporcionada. Retorna dates amb offset +02:00. "
-        f"\nCONTEXT:\n{context}"
-    )
+    # Neteja de les barres d'escapament de markdown del template (p. ex: \<CONTEXT\_MUNICIPAL\> -> <CONTEXT_MUNICIPAL>)
+    clean_template = template.replace("\\<", "<").replace("\\>", ">").replace("\\_", "_")
+
+    # Generació del context municipal actualitzat
+    context_block = await build_deal_context_stateless(session, deal_id)
+    if context_block.startswith("Deal no trobat"):
+        return {"response": "⚠️ Deal no trobat.", "tool_action": None}
+
+    # Reemplaçament del bloc del context al prompt del sistema
+    if "<CONTEXT_MUNICIPAL>" in clean_template:
+        system_prompt = clean_template.split("<CONTEXT_MUNICIPAL>")[0] + context_block
+    else:
+        system_prompt = clean_template + "\n\n" + context_block
+
+    chat_history = await get_chat_history(session, deal_id)
 
     messages = [{"role": "system", "content": system_prompt}]
     messages.extend(chat_history)

@@ -165,6 +165,9 @@ class AccioCreate(BaseModel):
     data_programada: datetime
     metadata_json: Optional[Dict[str, Any]] = None
 
+class AccioUpdate(BaseModel):
+    descripcio: str
+
 # --- DEALS (PROJECTES) ---
 
 @app.get("/deals/kanban", response_model=List[DealKanbanRead])
@@ -560,7 +563,7 @@ async def create_deal_accio(deal_id: int, request: AccioCreate, session: AsyncSe
 
 @app.patch("/accions/{accio_id}/completar")
 async def completar_accio(accio_id: int, session: AsyncSession = Depends(get_session)):
-    """Marca una tasca del calendari com a completada i genera un log al timeline."""
+    """Marca una tasca del calendari como a completada i genera un log al timeline."""
     stmt = select(CalendariEvent).where(CalendariEvent.id == accio_id).options(selectinload(CalendariEvent.deal))
     res = await session.execute(stmt)
     event = res.scalar_one_or_none()
@@ -581,6 +584,32 @@ async def completar_accio(accio_id: int, session: AsyncSession = Depends(get_ses
 
     await session.commit()
     return {"status": "ok", "message": "Tasca completada i registrada al timeline"}
+
+@app.patch("/accions/{accio_id}", response_model=CalendariEventRead)
+async def update_accio(accio_id: int, request: AccioUpdate, session: AsyncSession = Depends(get_session)):
+    """Actualitza el títol/descripció d'una acció del calendari/checklist."""
+    stmt = select(CalendariEvent).where(CalendariEvent.id == accio_id)
+    res = await session.execute(stmt)
+    event = res.scalar_one_or_none()
+    if not event: raise HTTPException(status_code=404, detail="Acció no trobada")
+    
+    event.descripcio = request.descripcio
+    session.add(event)
+    await session.commit()
+    await session.refresh(event)
+    return event
+
+@app.delete("/accions/{accio_id}")
+async def delete_accio(accio_id: int, session: AsyncSession = Depends(get_session)):
+    """Elimina permanentment una acció (tasca/event) del calendari/checklist."""
+    stmt = select(CalendariEvent).where(CalendariEvent.id == accio_id)
+    res = await session.execute(stmt)
+    event = res.scalar_one_or_none()
+    if not event: raise HTTPException(status_code=404, detail="Acció no trobada")
+    
+    await session.delete(event)
+    await session.commit()
+    return {"status": "ok", "message": "Acció eliminada correctament"}
 
 @app.get("/emails", response_model=List[InteraccioReadWithContext])
 async def get_emails(limit: int = 50, offset: int = 0, session=Depends(get_session)):
@@ -622,28 +651,5 @@ async def get_calendar_events_formatted(session: AsyncSession = Depends(get_sess
             "resource": {"deal_id": ev.deal_id, "tipus": ev.tipus}
         })
     return events
-
 # --- AGENT IA (Kimi k2.5) ---
-
-agent_router = APIRouter(prefix="/agent", tags=["AI Agent"])
-
-class AgentQuery(BaseModel):
-    query: str
-
-@agent_router.post("/deals/{deal_id}/ask")
-async def ask_agent(deal_id: int, body: AgentQuery, session=Depends(get_session)):
-    """Pregunta a l'agent Kimi sobre un deal específic. Suporta Function Calling per agendar events."""
-    query = body.query
-    deal_check = await session.execute(select(Deal).where(Deal.id == deal_id))
-    if not deal_check.scalar_one_or_none():
-        raise HTTPException(status_code=404, detail="Deal no trobat")
-
-    result = await ask_kimi_v4(session, deal_id, "general_query", query)
-
-    # ask_kimi_v4 retorna un dict amb {response, tool_action} o directament un string (email pipeline)
-    if isinstance(result, dict):
-        return {"response": result.get("response", ""), "tool_action": result.get("tool_action")}
-    else:
-        return {"response": result, "tool_action": None}
-
-app.include_router(agent_router)
+# Netejat deute tècnic: Rutes duplicades mogudes a l'endpoint principal persistent.
