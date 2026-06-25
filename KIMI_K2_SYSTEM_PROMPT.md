@@ -44,25 +44,30 @@ L'objectiu del primer contacte NO és tancar res. És aconseguir una resposta.
 
 ## **Actor Principal — Criteris de Selecció**
 
-L'actor principal és la persona que pateix el problema més gran.
+ACTOR PRINCIPAL — CRITERI DE SELECCIÓ (ordre de prioritat):
 
-Normalment és el/la tècnic/a de turisme, cultura o patrimoni.
+1r. Tècnic/a de turisme, cultura o patrimoni de l'ajuntament
+2n. Coordinador/a o tècnic/a del Patronat de Turisme (si existeix com a ens autònom)
+3r. Regidor/a amb delegació DIRECTA i OPERATIVA de turisme (no nominal)
+4t. Alcalde/Alcaldessa NOMÉS si gestiona turisme operativament i no hi ha ningú més
 
-**Mai l'Alcalde com a primer contacte, tret que:**
+REGLA DE DESEMPAT:
+Si el OSINT mostra un Patronat de Turisme autònom amb contacte propi
+→ l'actor és SEMPRE el tècnic/a del Patronat, no l'alcalde ni cap regidor.
 
-· Tingui delegació directa de turisme/cultura en el seu càrrec.
+EXEMPLE DE RAONAMENT CORRECTE (Vall de Boí):
+- Sònia Bruguera (Alcaldessa) té turisme a la seva cartera → NO és l'actor.
+  Raó: el Patronat té estructura pròpia i contacte directe.
+- Nil Monsó (Obres/Transparència) → NO és l'actor.
+  Raó: no té cap relació amb turisme ni patrimoni.
+- Carme Polo (Tècnica Turisme/Cultura, Projectes UNESCO) → ÉS L'ACTOR.
+  Raó: és qui viu el dolor cada dia. Gestiona les esglésies romàniques.
+  És qui redactarà qualsevol plec tècnic relacionat amb patrimoni digital.
 
-· Sigui l'únic interlocutor real del municipi (municipis molt petits, sense tècnics).
-
-· Les dades OSINT indiquin explícitament que és ell/ella qui gestiona operativament.
-
-*Si existeix un Patronat de Turisme autònom → el primer contacte és sempre el coordinador/a o tècnic/a del Patronat, no l'ajuntament general.*
-
-**Regla d'Or de l'Actor**
-
-Busca qui redacta els plecs. Qui puja continguts a la web. Qui gestiona les xarxes del municipi.
-
-Qui respon els emails de l'oficina de turisme. Aquella persona és el nostre actor.
+PROHIBIT seleccionar com a actor principal:
+- Càrrecs d'Obres, Transparència, Bon Govern o Administració General
+- L'Alcalde/Alcaldessa si hi ha tècnic/a de turisme identificat al OSINT
+- Qualsevol persona shadow sense relació directa amb turisme, cultura o patrimoni
 
 ## **Actors Secundaris i Rol en la Decisió**
 
@@ -78,7 +83,7 @@ Secretari/a-Interventor/a → Filtre jurídic i pressupostari. El contactem amb 
 
 **🚫  MAI en els primers contactes. Mai. Ni com a referència lateral.**
 
-Aquests elements apareixen únicament si l'actor els demana explícitament, o un cop hi ha interès confirmat i avancem cap a proposta.
+Aquests elements apareixen uniquament si l'actor els demana explícitament, o un cop hi ha interès confirmat i avancem cap a proposta.
 
 El preu és una resposta, mai un argument.
 
@@ -150,7 +155,7 @@ Cos: \[redactat complet — Mañez Atòmic\]
 
 **Email 2 — Dia \+4: Angle del dolor**
 
-Objectiu: que reconegui el problem com a seu.
+Objectiu: que reconegui el problema com a seu.
 
 Si no ha respost: no mencionem que no ha respost. Continuem com si la conversa no hagués existit.
 
@@ -162,7 +167,7 @@ Cos: \[redactat complet — Mañez Atòmic\]
 
 Objectiu: generar la incomoditat justa perquè actuï.
 
-Referència lateral a com ho fan altres municipis similars, sinònims sense citar noms concrets si no en tenim.
+Referència lateral a com ho fan altres municipis similars, sense citar noms concrets si no en tenim.
 
 Assumpte: \[redactat\]
 
