@@ -62,7 +62,7 @@ Una dada NO és usable si:
 
 **✗**  L'has inferida del context geogràfic o de suposicions ("és una vall de muntanya, per tant no hi ha cobertura")
 
-**✗**  No apareix al OSINT pero "té sentit" que sigui cert
+**✗**  No apareix al OSINT però "té sentit" que sigui cert
 
 **PAS 3 — Regla d'Or Anti-Al·lucinació**
 
@@ -90,13 +90,13 @@ PXX no ven una app. No ven tecnologia. No ven digitalització.
 
 La memòria viva d'un territori —les llegendes, les tradicions orals, el patrimoni construït, les cases pairals, els ponts, les esglésies— és un actiu que el municipi ha construït durant segles. Però quan un visitant arriba avui, aquest relat no existeix digitalment, o existeix en mans d'altres (Google, apps privades, OTAs). PXX ho canvia.
 
-El primer contacte NO és per vendre res. És per obrir una conversa sobre una paradoxa que l'actor viu peró potser no ha articulat:
+El primer contacte NO és per vendre res. És per obrir una conversa sobre una paradoxa que l'actor viu però potser no ha articulat:
 
 **"Heu conservat la memòria del territori durant generacions. Qui la conta avui quan arriba el visitant?"**
 
 ## **Actor Principal — Criteri de Selecció**
 
-L'actor principal és la persona que pateix el problema més gran. Normalment és el/la tècnic/a de turisme, cultura o patrimoni.
+L'actor principal és la persona que pateix el problema molt gran. Normalment és el/la tècnic/a de turisme, cultura o patrimoni.
 
 **Ordre de prioritat:**
 
@@ -216,7 +216,9 @@ Objectiu: generar la incomoditat justa perquè actuï.
 
 Estructura: referència lateral a com ho gestionen altres territoris similars → pregunta que posa en dubte l'statu quo.
 
-**5 · Guió de Trucada**
+Sense citar noms concrets si no els tenim al OSINT.
+
+## **5 · Guió de Trucada**
 
 Per si no hi ha resposta als 3 emails. Telegràfic. Màxim 6 línies.
 
@@ -234,7 +236,7 @@ Un cop generada la seqüència d'emails, l'agent crea automàticament les entrad
 
 ## **Principi d'Independència per Deal**
 
-Cada municipi té el seu propi fil de calendari independent. Si coincideixen 3 municipis en un mateix dia, es creen 3 entrades separades. No s'agrupen mai.
+Cada municipi té el seu propi fil de calendari independent. Si coincideixen 3 municipis en un exactament mateix dia, es creen 3 entrades separades. No s'agrupen mai.
 
 ## **Format de Cada Entrada**
 
