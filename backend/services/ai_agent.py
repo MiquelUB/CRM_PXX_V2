@@ -224,13 +224,41 @@ async def interact_with_kimi_persistent(session: AsyncSession, deal_id: int, use
     # Neteja de les barres d'escapament de markdown del template (p. ex: \<CONTEXT\_MUNICIPAL\> -> <CONTEXT_MUNICIPAL>)
     clean_template = template.replace("\\<", "<").replace("\\>", ">").replace("\\_", "_")
 
+    # Obtenir el coneixement global (pxx_general) de la base de dades i injectar-lo
+    global_knowledge_block = ""
+    try:
+        stmt = select(GlobalKnowledge).where(GlobalKnowledge.key == "pxx_general")
+        res = await session.execute(stmt)
+        gk = res.scalar_one_or_none()
+        if gk and gk.content:
+            global_knowledge_block = (
+                f"\n\n# **BLOC 0B — Argumentari de Vendes i Coneixement Global (pxx_general)**\n\n"
+                f"<CONEIXEMENT_GLOBAL>\n"
+                f"{gk.content.strip()}\n"
+                f"</CONEIXEMENT_GLOBAL>\n"
+            )
+    except Exception as e:
+        print(f"[AI_AGENT] Error loading global knowledge: {e}")
+
+    if global_knowledge_block:
+        if "# **BLOC 1" in clean_template:
+            parts = clean_template.split("# **BLOC 1", 1)
+            clean_template = parts[0] + global_knowledge_block + "# **BLOC 1" + parts[1]
+        else:
+            clean_template = clean_template + "\n" + global_knowledge_block
+
     # Generació del context municipal actualitzat
     context_block = await build_deal_context_stateless(session, deal_id)
     if context_block.startswith("Deal no trobat"):
         return {"response": "⚠️ Deal no trobat.", "tool_action": None}
 
-    # Reemplaçament del bloc del context al prompt del sistema
-    if "<CONTEXT_MUNICIPAL>" in clean_template:
+    # Reemplaçament del bloc del context al prompt del sistema, preservant el final
+    if "<CONTEXT_MUNICIPAL>" in clean_template and "</CONTEXT_MUNICIPAL>" in clean_template:
+        parts_prefix = clean_template.split("<CONTEXT_MUNICIPAL>", 1)
+        prefix = parts_prefix[0]
+        suffix = parts_prefix[1].split("</CONTEXT_MUNICIPAL>", 1)[1]
+        system_prompt = prefix + context_block + suffix
+    elif "<CONTEXT_MUNICIPAL>" in clean_template:
         system_prompt = clean_template.split("<CONTEXT_MUNICIPAL>")[0] + context_block
     else:
         system_prompt = clean_template + "\n\n" + context_block
