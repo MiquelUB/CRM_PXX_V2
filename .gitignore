@@ -20,3 +20,4 @@ dist-ssr/
 # Dades de migració temporals
 migration_db/
 Thumbs.db
+*.db

@@ -2,8 +2,8 @@ import asyncio
 import logging
 from sqlmodel import select, func
 from sqlalchemy.orm import selectinload
-from backend.database import async_session_maker
-from backend.models import Municipi, Deal, Interaccio
+from database import async_session_maker
+from models import Municipi, Deal, Interaccio
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("IntegrityCheck")

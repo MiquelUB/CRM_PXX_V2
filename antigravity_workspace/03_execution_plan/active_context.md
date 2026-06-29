@@ -5,9 +5,9 @@
 - **Fita:** Desplegament a EasyPanel i Test d'Integritat Final.
 
 ## 📋 Checklist Fase D (Producció) - ACTIVA
-- [ ] Generar migració local (`initial_migration`) i fer commit a Git.
+- [x] Generar migració local (`initial_migration`) i fer commit a Git.
 - [ ] Executar `alembic upgrade head` a EasyPanel (Producció).
-- [ ] Validar script d'integritat de dades (`verify_integrity.py`).
+- [x] Validar script d'integritat de dades (`verify_integrity.py`).
 
 ## 📋 Checklist Fases Anteriors - COMPLETADES
 - [x] FASE A: Fonaments (Models i DB).

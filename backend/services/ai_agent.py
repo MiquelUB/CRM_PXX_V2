@@ -131,11 +131,50 @@ async def build_deal_context_stateless(session: AsyncSession, deal_id: int) -> s
         actors_list.append(f"{contact.nom}{carrec_str}, Email: {contact.email}{tel_str}")
     actors = "\n  ".join(actors_list) if actors_list else "Cap contacte registrat."
     
-    # Historial d'Interaccions recent
-    history = sorted([a for a in deal.accions if a.tipus != "kimi_chat"], key=lambda x: x.data)
-    history_lines = [f"[{i.data.strftime('%d/%m/%Y %H:%M')}] {i.tipus}: {i.contingut[:150]}" for i in history[-20:]]
-    historial = "\n  ".join(history_lines) if history_lines else "Cap interacció registrada."
-    
+    # --- DIARI D'ABORD: Historial complet i estructurat ---
+    all_actions = sorted(
+        [a for a in deal.accions if a.tipus != "kimi_chat"],
+        key=lambda x: x.data
+    )[-50:]  # Últimes 50 interaccions (augmentat des de 20)
+
+    # Categoritzem per tipus
+    notes_operador = []
+    correus = []
+    logs_sistema = []
+
+    for i in all_actions:
+        meta = i.metadata_json or {}
+        autor = meta.get("autor", "Sistema")
+        data_str = i.data.strftime('%d/%m/%Y %H:%M')
+        tipus_lower = (i.tipus or "").lower()
+
+        if tipus_lower in ("nota_manual", "nota"):
+            # Notes manuals: contingut COMPLET, sense truncar
+            notes_operador.append(f"[{data_str}] ({autor}): {i.contingut}")
+        elif tipus_lower in ("email", "email_in", "email_out"):
+            # Correus: contingut COMPLET
+            direccio = "REBUT" if tipus_lower == "email_in" else "ENVIAT" if tipus_lower == "email_out" else "EMAIL"
+            assumpte = meta.get("assumpte", meta.get("subject", ""))
+            prefix = f"{direccio}" + (f" — {assumpte}" if assumpte else "")
+            correus.append(f"[{data_str}] {prefix}: {i.contingut}")
+        else:
+            # Logs de sistema i altres: resum breu acceptable
+            logs_sistema.append(f"[{data_str}] {i.tipus}: {i.contingut[:250]}")
+
+    # Construïm el bloc estructurat
+    diari_lines = []
+    if notes_operador:
+        diari_lines.append("  --- Notes de l'Operador ---")
+        diari_lines.extend(f"  {n}" for n in notes_operador)
+    if correus:
+        diari_lines.append("  --- Correus ---")
+        diari_lines.extend(f"  {c}" for c in correus)
+    if logs_sistema:
+        diari_lines.append("  --- Accions del Sistema ---")
+        diari_lines.extend(f"  {l}" for l in logs_sistema)
+
+    diari_abord = "\n".join(diari_lines) if diari_lines else "  Cap interacció registrada al Diari d'Abord."
+
     # Deal actiu amb l'agenda i data actual
     now_local = datetime.now(timezone.utc) + timedelta(hours=2) # CEST local simplificat
     calendar_lines = [
@@ -160,9 +199,11 @@ async def build_deal_context_stateless(session: AsyncSession, deal_id: int) -> s
         f"  Temperatura: {temperatura}\n"
         f"  Angle Personalització: {angle_personalitzacio}\n"
         f"  Actors OSINT: {actors}\n"
-        f"  Historial Interaccions: {historial}\n"
         f"  Deal actiu: {deal_str}\n"
-        f"</CONTEXT_MUNICIPAL>"
+        f"</CONTEXT_MUNICIPAL>\n\n"
+        f"<DIARI_ABORD>\n"
+        f"{diari_abord}\n"
+        f"</DIARI_ABORD>"
     )
     return context
 
