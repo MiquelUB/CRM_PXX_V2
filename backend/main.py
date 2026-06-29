@@ -24,7 +24,7 @@ import traceback
 import logging
 import uuid
 import os
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter
 
 from contextlib import asynccontextmanager
@@ -163,10 +163,17 @@ class AccioCreate(BaseModel):
     tipus: str
     contingut: str
     data_programada: datetime
+    data_fi: Optional[datetime] = None
+    es_tasca: Optional[bool] = True
     metadata_json: Optional[Dict[str, Any]] = None
 
 class AccioUpdate(BaseModel):
-    descripcio: str
+    descripcio: Optional[str] = None
+    tipus: Optional[str] = None
+    data_inici: Optional[datetime] = None
+    data_fi: Optional[datetime] = None
+    completat: Optional[bool] = None
+    es_tasca: Optional[bool] = None
 
 # --- DEALS (PROJECTES) ---
 
@@ -551,8 +558,8 @@ async def create_deal_accio(deal_id: int, request: AccioCreate, session: AsyncSe
         tipus=request.tipus,
         descripcio=request.contingut,
         data_inici=request.data_programada,
-        data_fi=request.data_programada + timedelta(minutes=30),
-        es_tasca=True, # Per defecte les accions manuals són tasques de checklist
+        data_fi=request.data_fi or (request.data_programada + timedelta(minutes=30)),
+        es_tasca=request.es_tasca if request.es_tasca is not None else True,
         completat=False
     )
     
@@ -587,13 +594,25 @@ async def completar_accio(accio_id: int, session: AsyncSession = Depends(get_ses
 
 @app.patch("/accions/{accio_id}", response_model=CalendariEventRead)
 async def update_accio(accio_id: int, request: AccioUpdate, session: AsyncSession = Depends(get_session)):
-    """Actualitza el títol/descripció d'una acció del calendari/checklist."""
+    """Actualitza els camps d'una acció del calendari/checklist."""
     stmt = select(CalendariEvent).where(CalendariEvent.id == accio_id)
     res = await session.execute(stmt)
     event = res.scalar_one_or_none()
     if not event: raise HTTPException(status_code=404, detail="Acció no trobada")
     
-    event.descripcio = request.descripcio
+    if request.descripcio is not None:
+        event.descripcio = request.descripcio
+    if request.tipus is not None:
+        event.tipus = request.tipus
+    if request.data_inici is not None:
+        event.data_inici = request.data_inici
+    if request.data_fi is not None:
+        event.data_fi = request.data_fi
+    if request.completat is not None:
+        event.completat = request.completat
+    if request.es_tasca is not None:
+        event.es_tasca = request.es_tasca
+
     session.add(event)
     await session.commit()
     await session.refresh(event)
@@ -648,7 +667,12 @@ async def get_calendar_events_formatted(session: AsyncSession = Depends(get_sess
             "title": f"{ev.descripcio} ({ev.deal.municipi.nom if ev.deal and ev.deal.municipi else 'Deal'})",
             "start": ev.data_inici.isoformat(),
             "end": ev.data_fi.isoformat() if ev.data_fi else ev.data_inici.isoformat(),
-            "resource": {"deal_id": ev.deal_id, "tipus": ev.tipus}
+            "resource": {
+                "deal_id": ev.deal_id,
+                "tipus": ev.tipus,
+                "es_tasca": ev.es_tasca,
+                "completat": ev.completat
+            }
         })
     return events
 # --- AGENT IA (Kimi k2.5) ---
