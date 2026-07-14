@@ -19,9 +19,9 @@ const MunicipalityContextModule: React.FC = () => {
       return;
     }
 
-    // Validació de pes (< 50KB)
-    if (file.size > 50 * 1024) {
-      setFeedback({ type: 'error', msg: 'El fitxer ha de pesar menys de 50KB' });
+    // Validació de pes (< 200KB)
+    if (file.size > 200 * 1024) {
+      setFeedback({ type: 'error', msg: 'El fitxer ha de pesar menys de 200KB' });
       return;
     }
 
@@ -75,7 +75,7 @@ const MunicipalityContextModule: React.FC = () => {
 
       <div className="space-y-4">
         <p className="text-xs text-slate-500 leading-relaxed">
-          Puja un fitxer <span className="font-mono font-bold">.md</span> amb dades específiques del municipi per millorar les respostes de l'agent Kimi (màx. 50KB).
+          Puja un fitxer <span className="font-mono font-bold">.md</span> amb dades específiques del municipi per millorar les respostes de l'agent Kimi (màx. 200KB).
         </p>
 
         <div className="relative">
