@@ -1,6 +1,6 @@
 import React from 'react';
 import useSWR from 'swr';
-import { Briefcase, Building, Calendar, ArrowRight } from 'lucide-react';
+import { Briefcase, Building, Calendar, ArrowRight, Search } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
@@ -20,9 +20,20 @@ const Deals: React.FC = () => {
   
   const [isModalOpen, setIsModalOpen] = React.useState(false);
   const [isSaving, setIsSaving] = React.useState(false);
+  const [searchQuery, setSearchQuery] = React.useState('');
   const [formData, setFormData] = React.useState({
     titol: '',
     municipi_id: ''
+  });
+
+  const filteredDeals = deals?.filter((deal: any) => {
+    const searchLower = searchQuery.toLowerCase();
+    return (
+      deal.titol?.toLowerCase().includes(searchLower) ||
+      deal.municipi?.nom?.toLowerCase().includes(searchLower) ||
+      deal.municipi?.provincia?.toLowerCase().includes(searchLower) ||
+      deal.id?.toString().includes(searchLower)
+    );
   });
 
   const handleCreateDeal = async (e: React.FormEvent) => {
@@ -82,22 +93,35 @@ const Deals: React.FC = () => {
   return (
     <div className="max-w-7xl mx-auto space-y-6">
       {/* Header */}
-      <header className="flex justify-between items-end border-b border-slate-200 dark:border-slate-800 pb-6">
-        <div>
-          <h1 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">
-            Deals (Projectes)
-          </h1>
-          <p className="text-slate-500 mt-2">
-            Gestió completa de tots els projectes vinculats a municipis.
-          </p>
+      <header className="flex flex-col gap-4 border-b border-slate-200 dark:border-slate-800 pb-6">
+        <div className="flex justify-between items-end">
+          <div>
+            <h1 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">
+              Deals (Projectes)
+            </h1>
+            <p className="text-slate-500 mt-2">
+              Gestió completa de tots els projectes vinculats a municipis.
+            </p>
+          </div>
+          <button 
+            onClick={() => setIsModalOpen(true)}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 transition-colors shadow-lg shadow-indigo-500/20"
+          >
+            <span className="text-xl leading-none mb-0.5">+</span>
+            Nou Projecte
+          </button>
         </div>
-        <button 
-          onClick={() => setIsModalOpen(true)}
-          className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 transition-colors"
-        >
-          <span className="text-xl leading-none mb-0.5">+</span>
-          Nou Projecte
-        </button>
+
+        <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 shadow-sm flex items-center gap-3 focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-indigo-500 transition-all">
+          <Search size={18} className="text-slate-400" />
+          <input
+            type="text"
+            placeholder="Cerca per títol, municipi o ID..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full bg-transparent border-none outline-none text-sm text-slate-900 dark:text-white placeholder:text-slate-400"
+          />
+        </div>
       </header>
 
       {/* Modal Nou Deal */}
@@ -167,8 +191,8 @@ const Deals: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
-              {deals && deals.length > 0 ? (
-                deals.map((deal: any) => (
+              {filteredDeals && filteredDeals.length > 0 ? (
+                filteredDeals.map((deal: any) => (
                   <tr 
                     key={deal.id} 
                     className="hover:bg-slate-50 dark:hover:bg-slate-900/20 transition-colors group"
@@ -223,7 +247,7 @@ const Deals: React.FC = () => {
               ) : (
                 <tr>
                   <td colSpan={5} className="px-6 py-12 text-center text-slate-500">
-                    No hi ha deals registrats a la base de dades.
+                    {deals?.length === 0 ? "No hi ha deals registrats a la base de dades." : "Cap deal coincideix amb la cerca."}
                   </td>
                 </tr>
               )}

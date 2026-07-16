@@ -1,6 +1,6 @@
 import React from 'react';
 import useSWR from 'swr';
-import { MapPin, Plus, ExternalLink, Trash2, ShieldCheck, Info } from 'lucide-react';
+import { MapPin, Plus, ExternalLink, Trash2, ShieldCheck, Info, Search } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
@@ -13,6 +13,16 @@ const Municipis: React.FC = () => {
   const navigate = useNavigate();
   const { data: municipis, mutate } = useSWR(`${API_BASE}/municipis`, fetcher);
   const [isModalOpen, setIsModalOpen] = React.useState(false);
+  const [searchQuery, setSearchQuery] = React.useState('');
+
+  const filteredMunicipis = municipis?.filter((m: any) => {
+    const searchLower = searchQuery.toLowerCase();
+    return (
+      m.nom?.toLowerCase().includes(searchLower) ||
+      m.codi_ine?.toLowerCase().includes(searchLower) ||
+      m.provincia?.toLowerCase().includes(searchLower)
+    );
+  });
   const [formData, setFormData] = React.useState({ 
     nom: '', 
     codi_ine: '', 
@@ -79,6 +89,17 @@ const Municipis: React.FC = () => {
           <Plus size={20} />
           Nou Onboarding
         </button>
+      </div>
+
+      <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 shadow-sm flex items-center gap-3 focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-indigo-500 transition-all">
+        <Search size={18} className="text-slate-400" />
+        <input
+          type="text"
+          placeholder="Cerca per nom, codi INE o província..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full bg-transparent border-none outline-none text-sm text-slate-900 dark:text-white placeholder:text-slate-400"
+        />
       </div>
 
       {isModalOpen && (
@@ -211,7 +232,13 @@ const Municipis: React.FC = () => {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-900">
-            {municipis?.map((m: any) => (
+            {filteredMunicipis?.length === 0 ? (
+              <tr>
+                <td colSpan={4} className="px-6 py-12 text-center text-slate-500">
+                  {municipis?.length === 0 ? "No hi ha municipis registrats a la base de dades." : "Cap municipi coincideix amb la cerca."}
+                </td>
+              </tr>
+            ) : filteredMunicipis?.map((m: any) => (
               <tr key={m.codi_ine} className="hover:bg-slate-50 dark:hover:bg-slate-900/30 transition-colors">
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-3">
