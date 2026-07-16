@@ -25,12 +25,12 @@ const KanbanBoard: React.FC = () => {
   const { data: rawDeals, mutate } = useSWR<DealSnippet[]>(`${API_BASE}/deals/kanban`, fetcher);
   const navigate = useNavigate();
 
-  const columns = ["NOU", "CONTACTAT", "DEMO", "PROPOSTA", "TANCAT"];
+  const columns = ["NOU", "CONTACTAT", "DEMO", "PROPOSTA", "TANCAT", "PERDUT", "HIVERNANT"];
 
   // Grup dades per columnes
   const data = useMemo(() => {
     const board: { [key: string]: DealSnippet[] } = {
-      "NOU": [], "CONTACTAT": [], "DEMO": [], "PROPOSTA": [], "TANCAT": []
+      "NOU": [], "CONTACTAT": [], "DEMO": [], "PROPOSTA": [], "TANCAT": [], "PERDUT": [], "HIVERNANT": []
     };
     if (rawDeals) {
       rawDeals.forEach(deal => {
@@ -60,7 +60,9 @@ const KanbanBoard: React.FC = () => {
       "CONTACTAT": "Contactat",
       "DEMO": "Demo",
       "PROPOSTA": "Proposta",
-      "TANCAT": "Tancat"
+      "TANCAT": "Tancat",
+      "PERDUT": "Perdut",
+      "HIVERNANT": "Hivernant"
     };
     const estatBackend = statusMapping[newStatus.toUpperCase()] || "Nou";
 
