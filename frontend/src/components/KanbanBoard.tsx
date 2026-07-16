@@ -93,7 +93,7 @@ const KanbanBoard: React.FC = () => {
 
   return (
     <DragDropContext onDragEnd={onDragEnd}>
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 overflow-x-auto pb-4">
+      <div className="flex gap-4 overflow-x-auto pb-4 items-start min-h-[70vh]">
         {columns.map(colId => (
           <div key={colId} className="flex flex-col min-w-[280px]">
             <div className="flex items-center justify-between mb-3 px-2">
