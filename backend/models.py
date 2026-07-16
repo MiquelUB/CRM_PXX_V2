@@ -13,6 +13,8 @@ class EstatDeal(str, Enum):
     DEMO = "Demo"
     PROPOSTA = "Proposta"
     TANCAT = "Tancat"
+    PERDUT = "Perdut"
+    HIVERNANT = "Hivernant"
 
 # --- MODELS DE BASE DE DADES (SQLModel) ---
 
@@ -187,6 +189,7 @@ class DealKanbanRead(SQLModel):
     proper_pas: Optional[str] = None
     data_seguiment: Optional[datetime] = None
     is_active: bool = True
+    data_creacio: datetime
     
     # Incloem el municipi bàsic ja que el Kanban el necessita per al títol
     municipi: Optional[MunicipiRead] = None
