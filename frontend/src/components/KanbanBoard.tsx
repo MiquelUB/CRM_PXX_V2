@@ -56,11 +56,11 @@ const KanbanBoard: React.FC = () => {
     // Per a l'actualització optimista amb la llista plana, és una mica més complex, 
     // però podem fer el mutate amb les dades que esperem del backend després
     const statusMapping: { [key: string]: string } = {
-      "NOU": "Nou",
-      "CONTACTAT": "Contactat",
-      "DEMO": "Demo",
-      "PROPOSTA": "Proposta",
-      "TANCAT": "Tancat",
+      "NOU": "NOU",
+      "CONTACTAT": "CONTACTAT",
+      "DEMO": "DEMO",
+      "PROPOSTA": "PROPOSTA",
+      "TANCAT": "TANCAT",
       "PERDUT": "Perdut",
       "HIVERNANT": "Hivernant"
     };

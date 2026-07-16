@@ -8,11 +8,11 @@ from pydantic import BaseModel, EmailStr, Field as PydanticField
 
 # --- ENUMS DE NEGOCI ---
 class EstatDeal(str, Enum):
-    NOU = "Nou"
-    CONTACTAT = "Contactat"
-    DEMO = "Demo"
-    PROPOSTA = "Proposta"
-    TANCAT = "Tancat"
+    NOU = "NOU"
+    CONTACTAT = "CONTACTAT"
+    DEMO = "DEMO"
+    PROPOSTA = "PROPOSTA"
+    TANCAT = "TANCAT"
     PERDUT = "Perdut"
     HIVERNANT = "Hivernant"
 

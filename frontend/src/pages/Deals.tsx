@@ -99,11 +99,11 @@ const Deals: React.FC = () => {
 
   const getEstatStyle = (estat: string) => {
     switch (estat) {
-      case 'Nou': return 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-900 dark:text-slate-400 dark:border-slate-800';
-      case 'Contactat': return 'bg-blue-100 text-blue-600 border-blue-200 dark:bg-blue-900/40 dark:text-blue-400 dark:border-blue-800';
-      case 'Demo': return 'bg-indigo-100 text-indigo-600 border-indigo-200 dark:bg-indigo-900/40 dark:text-indigo-400 dark:border-indigo-800';
-      case 'Proposta': return 'bg-amber-100 text-amber-600 border-amber-200 dark:bg-amber-900/40 dark:text-amber-400 dark:border-amber-800';
-      case 'Tancat': return 'bg-emerald-100 text-emerald-600 border-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-400 dark:border-emerald-800';
+      case 'NOU': return 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-900 dark:text-slate-400 dark:border-slate-800';
+      case 'CONTACTAT': return 'bg-blue-100 text-blue-600 border-blue-200 dark:bg-blue-900/40 dark:text-blue-400 dark:border-blue-800';
+      case 'DEMO': return 'bg-indigo-100 text-indigo-600 border-indigo-200 dark:bg-indigo-900/40 dark:text-indigo-400 dark:border-indigo-800';
+      case 'PROPOSTA': return 'bg-amber-100 text-amber-600 border-amber-200 dark:bg-amber-900/40 dark:text-amber-400 dark:border-amber-800';
+      case 'TANCAT': return 'bg-emerald-100 text-emerald-600 border-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-400 dark:border-emerald-800';
       case 'Perdut': return 'bg-rose-100 text-rose-600 border-rose-200 dark:bg-rose-900/40 dark:text-rose-400 dark:border-rose-800';
       case 'Hivernant': return 'bg-purple-100 text-purple-600 border-purple-200 dark:bg-purple-900/40 dark:text-purple-400 dark:border-purple-800';
       default: return 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-900 dark:text-slate-400 dark:border-slate-800';
@@ -243,15 +243,15 @@ const Deals: React.FC = () => {
 
                     <td className="px-6 py-4">
                       <select 
-                        value={deal.estat_kanban || 'Nou'}
+                        value={deal.estat_kanban || 'NOU'}
                         onChange={(e) => handleStatusChange(deal.id, e.target.value)}
-                        className={`px-2.5 py-1 text-[11px] font-black uppercase tracking-wider rounded-md border outline-none cursor-pointer appearance-none text-center ${getEstatStyle(deal.estat_kanban || 'Nou')}`}
+                        className={`px-2.5 py-1 text-[11px] font-black uppercase tracking-wider rounded-md border outline-none cursor-pointer appearance-none text-center ${getEstatStyle(deal.estat_kanban || 'NOU')}`}
                       >
-                        <option value="Nou">Nou</option>
-                        <option value="Contactat">Contactat</option>
-                        <option value="Demo">Demo</option>
-                        <option value="Proposta">Proposta</option>
-                        <option value="Tancat">Tancat</option>
+                        <option value="NOU">Nou</option>
+                        <option value="CONTACTAT">Contactat</option>
+                        <option value="DEMO">Demo</option>
+                        <option value="PROPOSTA">Proposta</option>
+                        <option value="TANCAT">Tancat</option>
                         <option value="Perdut">Perdut</option>
                         <option value="Hivernant">Hivernant</option>
                       </select>
