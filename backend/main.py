@@ -127,8 +127,8 @@ async def global_exception_handler(request: Request, exc: Exception):
 async def health_check(session: AsyncSession = Depends(get_session)):
     """Healthcheck robust per a Easypanel."""
     try:
-        await session.execute(text("SELECT 1"))
-        return {"status": "ok", "database": "connected", "timestamp": datetime.utcnow().isoformat()}
+        await session.exec(text("SELECT 1"))
+        return {"status": "ok", "database": "connected", "timestamp": datetime.now(timezone.utc).isoformat()}
     except Exception as e:
         logging.error(f"Healthcheck failed: {e}")
         return JSONResponse(
@@ -193,8 +193,8 @@ async def get_kanban_deals(session: AsyncSession = Depends(get_session)):
         .where(Deal.is_active == True)
         .options(selectinload(Deal.municipi))  # type: ignore[arg-type]
     )
-    result = await session.execute(statement)
-    return result.scalars().all()
+    result = await session.exec(statement)
+    return result.all()
 
 @app.get("/deals/{deal_id}", response_model=DealReadWithMunicipi)
 async def get_deal_full(deal_id: int, session: AsyncSession = Depends(get_session)):
@@ -205,8 +205,8 @@ async def get_deal_full(deal_id: int, session: AsyncSession = Depends(get_sessio
         selectinload(Deal.accions),  # type: ignore[arg-type]
         selectinload(Deal.calendari_events)  # type: ignore[arg-type]
     )
-    result = await session.execute(statement)
-    deal = result.scalar_one_or_none()
+    result = await session.exec(statement)
+    deal = result.one_or_none()
     
     if not deal:
         raise HTTPException(status_code=404, detail="Deal no trobat")
@@ -222,8 +222,8 @@ async def get_deals(limit: int = 50, offset: int = 0, session=Depends(get_sessio
         .limit(limit)
         .offset(offset)
     )
-    result = await session.execute(statement)
-    return result.scalars().all()
+    result = await session.exec(statement)
+    return result.all()
 
 @app.post("/deals/onboarding", response_model=dict)
 async def full_onboarding(request: OnboardingRequest, session=Depends(get_session)):
@@ -237,8 +237,8 @@ async def full_onboarding(request: OnboardingRequest, session=Depends(get_sessio
     try:
         # 1. Get or Create Municipi
         statement = select(Municipi).where(Municipi.codi_ine == request.municipi.codi_ine)
-        result = await session.execute(statement)
-        municipi = result.scalar_one_or_none()
+        result = await session.exec(statement)
+        municipi = result.one_or_none()
         
         if not municipi:
             municipi = Municipi(**request.municipi.model_dump())
@@ -247,8 +247,8 @@ async def full_onboarding(request: OnboardingRequest, session=Depends(get_sessio
 
         # 2. Verificar Deal existent (Soft Delete respectat)
         statement_deal = select(Deal).where(Deal.municipi_id == municipi.id, Deal.is_active == True)
-        res_deal = await session.execute(statement_deal)
-        existing_deal = res_deal.scalar_one_or_none()
+        res_deal = await session.exec(statement_deal)
+        existing_deal = res_deal.one_or_none()
         
         if existing_deal:
             raise HTTPException(status_code=409, detail="Aquest municipi ja té un Deal actiu.")
@@ -314,8 +314,8 @@ async def ask_agent(deal_id: int, request: Dict[str, str], session: AsyncSession
 async def update_deal_estat(deal_id: int, request: DealStatusUpdate, session: AsyncSession = Depends(get_session)):
     """Actualització segura de l'estat via Pydantic."""
     statement = select(Deal).where(Deal.id == deal_id)
-    result = await session.execute(statement)
-    deal = result.scalar_one_or_none()
+    result = await session.exec(statement)
+    deal = result.one_or_none()
     if not deal: raise HTTPException(status_code=404, detail="No trobat")
     
     deal.estat_kanban = request.estat_kanban
@@ -328,8 +328,8 @@ async def update_deal_estat(deal_id: int, request: DealStatusUpdate, session: As
 async def update_deal_saas(deal_id: int, request: DealSaaSUpdate, session: AsyncSession = Depends(get_session)):
     """Actualització segura del pla SaaS via Pydantic."""
     statement = select(Deal).where(Deal.id == deal_id)
-    result = await session.execute(statement)
-    deal = result.scalar_one_or_none()
+    result = await session.exec(statement)
+    deal = result.one_or_none()
     if not deal: raise HTTPException(status_code=404, detail="No trobat")
     
     update_data = request.model_dump(exclude_unset=True)
@@ -354,8 +354,8 @@ async def update_deal_saas(deal_id: int, request: DealSaaSUpdate, session: Async
 async def update_deal(deal_id: int, request: DealUpdate, session: AsyncSession = Depends(get_session)):
     """Actualització genèrica de Deal (inclou context de municipi)."""
     statement = select(Deal).where(Deal.id == deal_id)
-    result = await session.execute(statement)
-    deal = result.scalar_one_or_none()
+    result = await session.exec(statement)
+    deal = result.one_or_none()
     if not deal:
         raise HTTPException(status_code=404, detail="Deal no trobat")
     
@@ -384,16 +384,16 @@ app.include_router(knowledge_router, prefix="/api")
 async def get_contactes(limit: int = 50, offset: int = 0, session=Depends(get_session)):
     """Llistat de contactes amb municipi carregat."""
     statement = select(Contacte).options(selectinload(Contacte.municipi)).limit(limit).offset(offset)  # type: ignore[arg-type]
-    result = await session.execute(statement)
-    return result.scalars().all()
+    result = await session.exec(statement)
+    return result.all()
 
 @app.post("/contactes")
 async def create_contact(data: ContacteCreate, session=Depends(get_session)):
     """Creació de contacte amb validació estricta."""
     # Verificació de que el deal existeix si s'ha passat
     if data.deal_id:
-        deal_check = await session.execute(select(Deal).where(Deal.id == data.deal_id))
-        if not deal_check.scalar_one_or_none():
+        deal_check = await session.exec(select(Deal).where(Deal.id == data.deal_id))
+        if not deal_check.one_or_none():
             raise HTTPException(status_code=404, detail="Deal no trobat")
             
     nou_contacte = Contacte(**data.model_dump())
@@ -401,8 +401,8 @@ async def create_contact(data: ContacteCreate, session=Depends(get_session)):
     # Auto-vincular a Deal actiu si no s'ha passat deal_id però sí municipi_id
     if not nou_contacte.deal_id and nou_contacte.municipi_id:
         stmt = select(Deal).where(Deal.municipi_id == nou_contacte.municipi_id, Deal.is_active == True)
-        res = await session.execute(stmt)
-        active_deal = res.scalar_one_or_none()
+        res = await session.exec(stmt)
+        active_deal = res.one_or_none()
         if active_deal:
             nou_contacte.deal_id = active_deal.id
 
@@ -420,8 +420,8 @@ async def create_contact(data: ContacteCreate, session=Depends(get_session)):
 async def update_contacte(contact_id: int, data: ContacteCreate, session=Depends(get_session)):
     """Actualització de contacte amb validació estricta."""
     statement = select(Contacte).where(Contacte.id == contact_id)
-    result = await session.execute(statement)
-    contacte = result.scalar_one_or_none()
+    result = await session.exec(statement)
+    contacte = result.one_or_none()
     if not contacte: raise HTTPException(status_code=404, detail="Contacte no trobat")
     
     update_data = data.model_dump(exclude_unset=True)
@@ -435,8 +435,8 @@ async def update_contacte(contact_id: int, data: ContacteCreate, session=Depends
 @app.delete("/contactes/{contact_id}")
 async def delete_contacte(contact_id: int, session=Depends(get_session)):
     statement = select(Contacte).where(Contacte.id == contact_id)
-    result = await session.execute(statement)
-    contacte = result.scalar_one_or_none()
+    result = await session.exec(statement)
+    contacte = result.one_or_none()
     if not contacte: raise HTTPException(status_code=404, detail="Contacte no trobat")
     
     await session.delete(contacte)
@@ -449,15 +449,15 @@ async def delete_contacte(contact_id: int, session=Depends(get_session)):
 async def get_municipis(limit: int = 50, offset: int = 0, session=Depends(get_session)):
     """Llistat de municipis amb deals carregats."""
     statement = select(Municipi).options(selectinload(Municipi.deals)).limit(limit).offset(offset)  # type: ignore[arg-type]
-    result = await session.execute(statement)
-    return result.scalars().all()
+    result = await session.exec(statement)
+    return result.all()
 
 @app.patch("/municipis/{municipi_id}")
 async def update_municipi(municipi_id: int, data: dict, session=Depends(get_session)):
     """Actualitza les dades d'un municipi (Manté dict per flexibilitat parcial, però es recomana esquema)."""
     statement = select(Municipi).where(Municipi.id == municipi_id)
-    result = await session.execute(statement)
-    m = result.scalar_one_or_none()
+    result = await session.exec(statement)
+    m = result.one_or_none()
     if not m: raise HTTPException(status_code=404, detail="Municipi no trobat")
     
     for key, value in data.items():
@@ -492,8 +492,8 @@ async def create_municipi(municipi: Municipi, session=Depends(get_session)):
 async def delete_municipi(municipi_id: int, session=Depends(get_session)):
     """Esborrat total d'un municipi (inclou Deals i Contactes per cascada)."""
     statement = select(Municipi).where(Municipi.id == municipi_id)
-    result = await session.execute(statement)
-    m = result.scalar_one_or_none()
+    result = await session.exec(statement)
+    m = result.one_or_none()
     if not m: raise HTTPException(status_code=404, detail="Municipi no trobat")
     
     await session.delete(m)
@@ -515,8 +515,8 @@ async def create_interaccio(data: InteraccioCreate, session: AsyncSession = Depe
 async def update_interaccio_status(interaccio_id: int, request: InteraccioUpdate, session: AsyncSession = Depends(get_session)):
     """Canvia l'estat de completat d'una interacció/tasca."""
     stmt = select(Interaccio).where(Interaccio.id == interaccio_id)
-    res = await session.execute(stmt)
-    interaccio = res.scalar_one_or_none()
+    res = await session.exec(stmt)
+    interaccio = res.one_or_none()
     if not interaccio: raise HTTPException(status_code=404, detail="No trobat")
     
     interaccio.is_completed = request.is_completed
@@ -528,8 +528,8 @@ async def update_interaccio_status(interaccio_id: int, request: InteraccioUpdate
 async def update_interaccio_content(interaccio_id: int, request: InteraccioFullUpdate, session: AsyncSession = Depends(get_session)):
     """Edició completa del contingut d'una interacció o tasca."""
     stmt = select(Interaccio).where(Interaccio.id == interaccio_id)
-    res = await session.execute(stmt)
-    interaccio = res.scalar_one_or_none()
+    res = await session.exec(stmt)
+    interaccio = res.one_or_none()
     if not interaccio: raise HTTPException(status_code=404, detail="No trobat")
     
     interaccio.contingut = request.contingut
@@ -545,8 +545,8 @@ async def update_interaccio_content(interaccio_id: int, request: InteraccioFullU
 async def delete_interaccio(interaccio_id: int, session: AsyncSession = Depends(get_session)):
     """Elimina permanentment una interacció o tasca."""
     stmt = select(Interaccio).where(Interaccio.id == interaccio_id)
-    res = await session.execute(stmt)
-    interaccio = res.scalar_one_or_none()
+    res = await session.exec(stmt)
+    interaccio = res.one_or_none()
     if not interaccio:
         raise HTTPException(status_code=404, detail="Registre no trobat")
     
@@ -559,8 +559,8 @@ async def create_deal_accio(deal_id: int, request: AccioCreate, session: AsyncSe
     """Programa una nova tasca/acció vinculada al calendari i al checklist."""
     # Obtenim el deal per saber el municipi_id
     stmt = select(Deal).where(Deal.id == deal_id)
-    res = await session.execute(stmt)
-    deal = res.scalar_one_or_none()
+    res = await session.exec(stmt)
+    deal = res.one_or_none()
     if not deal: raise HTTPException(status_code=404, detail="Deal no trobat")
 
     nou = CalendariEvent(
@@ -583,8 +583,8 @@ async def create_deal_accio(deal_id: int, request: AccioCreate, session: AsyncSe
 async def completar_accio(accio_id: int, session: AsyncSession = Depends(get_session)):
     """Marca una tasca del calendari como a completada i genera un log al timeline."""
     stmt = select(CalendariEvent).where(CalendariEvent.id == accio_id).options(selectinload(CalendariEvent.deal))  # type: ignore[arg-type]
-    res = await session.execute(stmt)
-    event = res.scalar_one_or_none()
+    res = await session.exec(stmt)
+    event = res.one_or_none()
     if not event: raise HTTPException(status_code=404, detail="Tasca no trobada")
     
     event.completat = True
@@ -607,8 +607,8 @@ async def completar_accio(accio_id: int, session: AsyncSession = Depends(get_ses
 async def update_accio(accio_id: int, request: AccioUpdate, session: AsyncSession = Depends(get_session)):
     """Actualitza els camps d'una acció del calendari/checklist."""
     stmt = select(CalendariEvent).where(CalendariEvent.id == accio_id)
-    res = await session.execute(stmt)
-    event = res.scalar_one_or_none()
+    res = await session.exec(stmt)
+    event = res.one_or_none()
     if not event: raise HTTPException(status_code=404, detail="Acció no trobada")
     
     if request.descripcio is not None:
@@ -633,8 +633,8 @@ async def update_accio(accio_id: int, request: AccioUpdate, session: AsyncSessio
 async def delete_accio(accio_id: int, session: AsyncSession = Depends(get_session)):
     """Elimina permanentment una acció (tasca/event) del calendari/checklist."""
     stmt = select(CalendariEvent).where(CalendariEvent.id == accio_id)
-    res = await session.execute(stmt)
-    event = res.scalar_one_or_none()
+    res = await session.exec(stmt)
+    event = res.one_or_none()
     if not event: raise HTTPException(status_code=404, detail="Acció no trobada")
     
     await session.delete(event)
@@ -652,8 +652,8 @@ async def get_emails(limit: int = 50, offset: int = 0, session=Depends(get_sessi
         .limit(limit)
         .offset(offset)
     )
-    result = await session.execute(statement)
-    return result.scalars().all()
+    result = await session.exec(statement)
+    return result.all()
 
 # --- CALENDARI (ESDEVENIMENTS) ---
 
@@ -667,8 +667,8 @@ async def get_calendar_events_formatted(session: AsyncSession = Depends(get_sess
             selectinload(CalendariEvent.deal).joinedload(Deal.municipi)  # type: ignore[arg-type]
         )
     )
-    result = await session.execute(statement)
-    events_db = result.scalars().all()
+    result = await session.exec(statement)
+    events_db = result.all()
     
     events = []
     for ev in events_db:

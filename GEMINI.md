@@ -40,8 +40,8 @@
 - Correcció de tots els errors de Pyright a `main.py` (false positives de SQLModel + `sa.desc()` + guards `None`).
 - Migració de `on_event("startup")` (deprecated) a `lifespan()` (FastAPI modern).
 - ENUM `estatdeal` reparable automàticament sense intervenció manual.
+- Migració de tots els `session.execute()` a `session.exec()` (SQLModel natiu) per resoldre els errors de depreciació (Warning de l'IDE).
 
 ## 📋 Propers Passos
 1. Validar el flux d'interaccions de correu (Worker).
 2. Implementar lògica de negoci avançada per als Plans SaaS (Territori, Mirador, etc.).
-3. Considerar migrar tots els `session.execute()` a `session.exec()` (SQLModel natiu).
