@@ -13,29 +13,35 @@
 2. **Fase d'Artefacte:** Genera el pla d'implementació. Atura't i espera l'aprovació de l'usuari (Sol·licita revisió).
 3. **Fase d'Execució:** Utilitza `write_file` només als fitxers aprovats i executa ordres sota la llista de permesos (npm, alembic).
 
-## 🚀 Estat Actual (2026-04-26)
+## 🚀 Estat Actual (2026-07-21)
 
 ### Backend (FastAPI + SQLModel)
-- **Base de dades**: PostgreSQL (Restaurada com a única font de veritat).
-- **Migracions**: Alembic configurat (llest per a `revision --autogenerate`).
+- **Base de dades**: PostgreSQL (Única font de veritat).
+- **Migracions**: Alembic configurat. Migració `0cb309c0305e` afegeix `Perdut` i `Hivernant` a l'ENUM `estatdeal`.
 - **Seguretat**: Endpoints refactoritzats amb validació estricta de Pydantic.
+- **Lifespan patch**: El `lifespan()` aplica `ALTER TYPE estatdeal ADD VALUE IF NOT EXISTS` via `AUTOCOMMIT` en cada arrencada, garantint paritat ENUM entre codi i BBDD a producció (Easypanel).
 - **Funcionalitats**: 
   - Onboarding atòmic de municipis.
   - Gestió de contactes vinculats a Deals.
   - Timeline unificat d'interaccions.
   - Paginació implementada en llistats crítics.
+  - Canvi d'estat del Deal (`estat_kanban`) des de la vista de detall.
 
 ### Frontend (React + Vite)
 - **Municipis**: Formulari d'onboarding amb selecció de Pla SaaS (`pla_saas`).
 - **Disseny**: Estètica premium amb Tailwind CSS (Paper/Ink style).
 - **Sincronització**: Mapeig de dades alineat amb el backend V2.
+- **DealDetail**: Selector interactiu d'`estat_kanban` a la capçalera (PATCH `/deals/{id}/estat`).
 
 ## 🛠️ Deute Tècnic Solucionat
 - Eliminació de dependència de SQLite local.
 - Unificació de timezones a `UTC`.
 - Substitució de paràmetres `dict` per models de dades tipats.
+- Correcció de tots els errors de Pyright a `main.py` (false positives de SQLModel + `sa.desc()` + guards `None`).
+- Migració de `on_event("startup")` (deprecated) a `lifespan()` (FastAPI modern).
+- ENUM `estatdeal` reparable automàticament sense intervenció manual.
 
 ## 📋 Propers Passos
-1. Executar migracions inicials d'Alembic en l'entorn de producció/local.
-2. Validar el flux d'interaccions de correu (Worker).
-3. Implementar lògica de negoci avançada per als Plans SaaS (Territori, Mirador, etc.).
+1. Validar el flux d'interaccions de correu (Worker).
+2. Implementar lògica de negoci avançada per als Plans SaaS (Territori, Mirador, etc.).
+3. Considerar migrar tots els `session.execute()` a `session.exec()` (SQLModel natiu).
