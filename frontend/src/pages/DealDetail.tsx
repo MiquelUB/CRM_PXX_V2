@@ -127,9 +127,35 @@ const DealDetail: React.FC = () => {
       <header className="flex justify-between items-center bg-white dark:bg-slate-950 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm">
         <div className="space-y-1">
           <div className="flex items-center gap-3">
-            <span className="px-2 py-1 bg-slate-900 text-white dark:bg-white dark:text-slate-950 rounded text-[9px] font-black uppercase tracking-widest">
-              {deal.estat_kanban}
-            </span>
+            <select
+              value={deal.estat_kanban || 'NOU'}
+              onChange={async (e) => {
+                const nouEstat = e.target.value;
+                try {
+                  const response = await fetch(`${API_BASE}/deals/${deal.id}/estat`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ estat_kanban: nouEstat })
+                  });
+                  if (response.ok) {
+                    await refreshDeal();
+                  } else {
+                    console.error("Error actualitzant l'estat.");
+                  }
+                } catch (error) {
+                  console.error("Error", error);
+                }
+              }}
+              className="px-2 py-1 bg-slate-900 text-white dark:bg-white dark:text-slate-950 rounded text-[9px] font-black uppercase tracking-widest outline-none cursor-pointer appearance-none text-center"
+            >
+              <option value="NOU">Nou</option>
+              <option value="CONTACTAT">Contactat</option>
+              <option value="DEMO">Demo</option>
+              <option value="PROPOSTA">Proposta</option>
+              <option value="TANCAT">Tancat</option>
+              <option value="Perdut">Perdut</option>
+              <option value="Hivernant">Hivernant</option>
+            </select>
             <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
               {deal.municipi?.nom}
             </h1>
