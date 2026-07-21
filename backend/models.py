@@ -13,8 +13,8 @@ class EstatDeal(str, Enum):
     DEMO = "DEMO"
     PROPOSTA = "PROPOSTA"
     TANCAT = "TANCAT"
-    PERDUT = "Perdut"
-    HIVERNANT = "Hivernant"
+    Perdut = "Perdut"
+    Hivernant = "Hivernant"
 
 # --- MODELS DE BASE DE DADES (SQLModel) ---
 
