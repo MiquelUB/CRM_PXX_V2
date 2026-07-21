@@ -31,8 +31,27 @@ from contextlib import asynccontextmanager
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Gestió del cicle de vida de l'aplicació (IMAP Desactivat)."""
-    logging.info("🚀 Backend CRM V2: Iniciant (IMAP Desactivat)")
+    """Gestió del cicle de vida: aplica patches de DB en arrencar."""
+    logging.info("🚀 Backend CRM V2: Iniciant")
+
+    # Patch 1: Columna is_completed (transacció normal)
+    async with engine.begin() as conn:
+        try:
+            await conn.execute(text('ALTER TABLE interaccio ADD COLUMN IF NOT EXISTS is_completed BOOLEAN DEFAULT FALSE;'))
+            logging.info("DB PATCH: Columna is_completed verificada/afegida.")
+        except Exception as e:
+            logging.info(f"DB PATCH is_completed: {e}")
+
+    # Patch 2: ENUM estatdeal (AUTOCOMMIT obligatori per a ALTER TYPE a PostgreSQL)
+    autocommit_engine = engine.execution_options(isolation_level="AUTOCOMMIT")
+    async with autocommit_engine.connect() as conn:
+        for value in ["Perdut", "Hivernant"]:
+            try:
+                await conn.execute(text(f"ALTER TYPE estatdeal ADD VALUE IF NOT EXISTS '{value}'"))
+                logging.info(f"DB PATCH: Valor '{value}' verificat/afegit a l'ENUM estatdeal.")
+            except Exception as e:
+                logging.info(f"DB PATCH ENUM {value}: {e}")
+
     try:
         yield
     finally:
@@ -42,31 +61,6 @@ app = FastAPI(
     title="CRM PXX v2 - Expert Refactored API",
     lifespan=lifespan
 )
-
-@app.on_event("startup")
-async def startup_db_fix():
-    """Arregla la base de dades en arrencar si falten columnes o valors d'ENUM."""
-    # Patch 1: Columna is_completed (requereix transacció normal)
-    async with engine.begin() as conn:
-        try:
-            await conn.execute(text('ALTER TABLE interaccio ADD COLUMN IF NOT EXISTS is_completed BOOLEAN DEFAULT FALSE;'))
-            logging.info("DB PATCH: Columna is_completed verificada/afegida.")
-        except Exception as e:
-            logging.info(f"DB PATCH is_completed: {e}")
-
-    # Patch 2: Valors de l'ENUM 'estatdeal' (REQUEREIX AUTOCOMMIT - no pot anar dins una transacció)
-    autocommit_engine = engine.execution_options(isolation_level="AUTOCOMMIT")
-    async with autocommit_engine.connect() as conn:
-        try:
-            await conn.execute(text("ALTER TYPE estatdeal ADD VALUE IF NOT EXISTS 'Perdut'"))
-            logging.info("DB PATCH: Valor 'Perdut' verificat/afegit a l'ENUM estatdeal.")
-        except Exception as e:
-            logging.info(f"DB PATCH ENUM Perdut: {e}")
-        try:
-            await conn.execute(text("ALTER TYPE estatdeal ADD VALUE IF NOT EXISTS 'Hivernant'"))
-            logging.info("DB PATCH: Valor 'Hivernant' verificat/afegit a l'ENUM estatdeal.")
-        except Exception as e:
-            logging.info(f"DB PATCH ENUM Hivernant: {e}")
 
 # --- CONFIGURACIÓ CORS ---
 frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
@@ -197,7 +191,7 @@ async def get_kanban_deals(session: AsyncSession = Depends(get_session)):
     statement = (
         select(Deal)
         .where(Deal.is_active == True)
-        .options(selectinload(Deal.municipi))
+        .options(selectinload(Deal.municipi))  # type: ignore[arg-type]
     )
     result = await session.execute(statement)
     return result.scalars().all()
@@ -206,10 +200,10 @@ async def get_kanban_deals(session: AsyncSession = Depends(get_session)):
 async def get_deal_full(deal_id: int, session: AsyncSession = Depends(get_session)):
     """Retorna tota la informació d'un deal ( Epicentre )."""
     statement = select(Deal).where(Deal.id == deal_id).options(
-        joinedload(Deal.municipi),
-        selectinload(Deal.contactes),
-        selectinload(Deal.accions),
-        selectinload(Deal.calendari_events)
+        joinedload(Deal.municipi),  # type: ignore[arg-type]
+        selectinload(Deal.contactes),  # type: ignore[arg-type]
+        selectinload(Deal.accions),  # type: ignore[arg-type]
+        selectinload(Deal.calendari_events)  # type: ignore[arg-type]
     )
     result = await session.execute(statement)
     deal = result.scalar_one_or_none()
@@ -224,7 +218,7 @@ async def get_deals(limit: int = 50, offset: int = 0, session=Depends(get_sessio
     """Llistat de tots els deals. Query neta: sense calendari."""
     statement = (
         select(Deal)
-        .options(selectinload(Deal.municipi))
+        .options(selectinload(Deal.municipi))  # type: ignore[arg-type]
         .limit(limit)
         .offset(offset)
     )
@@ -260,6 +254,7 @@ async def full_onboarding(request: OnboardingRequest, session=Depends(get_sessio
             raise HTTPException(status_code=409, detail="Aquest municipi ja té un Deal actiu.")
 
         # 3. Crear Deal
+        assert municipi.id is not None, "El flush hauria d'haver assignat l'ID del municipi."
         nou_deal = Deal(
             municipi_id=municipi.id,
             pla_saas=request.pla_assignat,
@@ -268,6 +263,7 @@ async def full_onboarding(request: OnboardingRequest, session=Depends(get_sessio
         )
         session.add(nou_deal)
         await session.flush()
+        assert nou_deal.id is not None, "El flush hauria d'haver assignat l'ID del deal."
 
         # 4. Crear Contactes (Llista)
         for c_data in request.contactes:
@@ -387,7 +383,7 @@ app.include_router(knowledge_router, prefix="/api")
 @app.get("/contactes", response_model=List[ContacteReadWithMunicipi])
 async def get_contactes(limit: int = 50, offset: int = 0, session=Depends(get_session)):
     """Llistat de contactes amb municipi carregat."""
-    statement = select(Contacte).options(selectinload(Contacte.municipi)).limit(limit).offset(offset)
+    statement = select(Contacte).options(selectinload(Contacte.municipi)).limit(limit).offset(offset)  # type: ignore[arg-type]
     result = await session.execute(statement)
     return result.scalars().all()
 
@@ -452,7 +448,7 @@ async def delete_contacte(contact_id: int, session=Depends(get_session)):
 @app.get("/municipis", response_model=List[MunicipiReadWithDeals])
 async def get_municipis(limit: int = 50, offset: int = 0, session=Depends(get_session)):
     """Llistat de municipis amb deals carregats."""
-    statement = select(Municipi).options(selectinload(Municipi.deals)).limit(limit).offset(offset)
+    statement = select(Municipi).options(selectinload(Municipi.deals)).limit(limit).offset(offset)  # type: ignore[arg-type]
     result = await session.execute(statement)
     return result.scalars().all()
 
@@ -480,6 +476,7 @@ async def create_municipi(municipi: Municipi, session=Depends(get_session)):
     await session.refresh(municipi)
     
     # Creació del Deal associat segons la nova arquitectura
+    assert municipi.id is not None, "El commit hauria d'haver assignat l'ID del municipi."
     nou_deal = Deal(
         municipi_id=municipi.id,
         pla_saas="Pla de Venda",
@@ -585,7 +582,7 @@ async def create_deal_accio(deal_id: int, request: AccioCreate, session: AsyncSe
 @app.patch("/accions/{accio_id}/completar")
 async def completar_accio(accio_id: int, session: AsyncSession = Depends(get_session)):
     """Marca una tasca del calendari como a completada i genera un log al timeline."""
-    stmt = select(CalendariEvent).where(CalendariEvent.id == accio_id).options(selectinload(CalendariEvent.deal))
+    stmt = select(CalendariEvent).where(CalendariEvent.id == accio_id).options(selectinload(CalendariEvent.deal))  # type: ignore[arg-type]
     res = await session.execute(stmt)
     event = res.scalar_one_or_none()
     if not event: raise HTTPException(status_code=404, detail="Tasca no trobada")
@@ -650,8 +647,8 @@ async def get_emails(limit: int = 50, offset: int = 0, session=Depends(get_sessi
     statement = (
         select(Interaccio)
         .where(Interaccio.tipus == "EMAIL")
-        .options(joinedload(Interaccio.deal).joinedload(Deal.municipi))
-        .order_by(Interaccio.data.desc())
+        .options(joinedload(Interaccio.deal).joinedload(Deal.municipi))  # type: ignore[arg-type]
+        .order_by(sa.desc(Interaccio.data))  # type: ignore[arg-type]
         .limit(limit)
         .offset(offset)
     )
@@ -667,7 +664,7 @@ async def get_calendar_events_formatted(session: AsyncSession = Depends(get_sess
         select(CalendariEvent)
         .where(CalendariEvent.completat == False)
         .options(
-            selectinload(CalendariEvent.deal).joinedload(Deal.municipi)
+            selectinload(CalendariEvent.deal).joinedload(Deal.municipi)  # type: ignore[arg-type]
         )
     )
     result = await session.execute(statement)
