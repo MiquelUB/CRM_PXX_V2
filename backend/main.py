@@ -45,14 +45,28 @@ app = FastAPI(
 
 @app.on_event("startup")
 async def startup_db_fix():
-    """Arregla la base de dades en arrencar si falten columnes (Bypass de migració per a casos crítics)."""
+    """Arregla la base de dades en arrencar si falten columnes o valors d'ENUM."""
+    # Patch 1: Columna is_completed (requereix transacció normal)
     async with engine.begin() as conn:
         try:
-            # Mantenim els patches crítics existents
             await conn.execute(text('ALTER TABLE interaccio ADD COLUMN IF NOT EXISTS is_completed BOOLEAN DEFAULT FALSE;'))
             logging.info("DB PATCH: Columna is_completed verificada/afegida.")
         except Exception as e:
-            logging.info(f"DB PATCH: Nota: {e}")
+            logging.info(f"DB PATCH is_completed: {e}")
+
+    # Patch 2: Valors de l'ENUM 'estatdeal' (REQUEREIX AUTOCOMMIT - no pot anar dins una transacció)
+    autocommit_engine = engine.execution_options(isolation_level="AUTOCOMMIT")
+    async with autocommit_engine.connect() as conn:
+        try:
+            await conn.execute(text("ALTER TYPE estatdeal ADD VALUE IF NOT EXISTS 'Perdut'"))
+            logging.info("DB PATCH: Valor 'Perdut' verificat/afegit a l'ENUM estatdeal.")
+        except Exception as e:
+            logging.info(f"DB PATCH ENUM Perdut: {e}")
+        try:
+            await conn.execute(text("ALTER TYPE estatdeal ADD VALUE IF NOT EXISTS 'Hivernant'"))
+            logging.info("DB PATCH: Valor 'Hivernant' verificat/afegit a l'ENUM estatdeal.")
+        except Exception as e:
+            logging.info(f"DB PATCH ENUM Hivernant: {e}")
 
 # --- CONFIGURACIÓ CORS ---
 frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
